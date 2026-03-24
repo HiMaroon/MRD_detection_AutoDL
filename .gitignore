@@ -1,0 +1,59 @@
+cat > .gitignore << 'EOF'
+# 默认忽略所有文件
+*
+
+# 但保留目录结构
+!*/
+
+# 允许跟踪 Python 和 YAML
+!*.py
+!*.yaml
+!*.yml
+
+# 保留一些常见项目说明文件（可选）
+!README.md
+!requirements.txt
+!environment.yml
+!setup.py
+!pyproject.toml
+!Dockerfile
+!.gitignore
+
+# 明确忽略数据、权重、日志、缓存
+data/
+datasets/
+outputs/
+logs/
+wandb/
+checkpoints/
+ckpt/
+weights/
+runs/
+results/
+cache/
+tmp/
+__pycache__/
+*.ipynb_checkpoints
+*.pt
+*.pth
+*.ckpt
+*.onnx
+*.pkl
+*.joblib
+*.csv
+*.tsv
+*.xlsx
+*.npy
+*.npz
+*.h5
+*.hdf5
+*.jpg
+*.jpeg
+*.png
+*.tif
+*.tiff
+*.bmp
+*.zip
+*.tar
+*.gz
+EOF

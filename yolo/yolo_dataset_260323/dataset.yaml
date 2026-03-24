@@ -1,0 +1,7 @@
+# Ultralytics 🚀 AGPL-3.0 License - https://ultralytics.com/license
+path: /root/autodl-tmp/projects/myq/SingleCellProject/yolo/yolo_dataset_260323
+train: images/train
+val: images/val
+nc: 1
+names:
+  0: 0

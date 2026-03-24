@@ -1,0 +1,22 @@
+#v0
+#arch: "efficientnet_b0"
+#pretrained: false
+#local_weight_path: "/root/autodl-tmp/projects/mwh/SingleCellProject/weights/pytorch_model.bin"
+#drop: 0.3
+#drop_path: 0.1
+#freeze_backbone_epochs: 5
+
+#应该是第13版但检查点文件大小还是不对
+arch: "efficientnet_b0"
+pretrained: false            # 要用本地权重，就关掉在线下载
+local_weight_path: "/root/autodl-tmp/projects/mwh/SingleCellProject/weights/pytorch_model.bin"
+
+#12.17 修改：更新到新预训练权重（.ckpt 文件）
+#local_weight_path: "/root/autodl-tmp/projects/mwh/SingleCellProject/pretrain/singlecell-pretrain/70e16uj6/checkpoints/pretrain-epoch=15-val_acc=0.0000.ckpt"
+
+#12.24 第二版预训练
+#local_weight_path: "/root/autodl-tmp/projects/mwh/SingleCellProject/pretrain/outputs/pretrain-epoch=44-val_acc=0.0000.ckpt"
+
+drop: 0.3
+drop_path: 0.1
+freeze_backbone_epochs: 5    # 先冻几轮，只训 head

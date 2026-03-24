@@ -1,0 +1,57 @@
+#v0
+#train_labels: "/root/autodl-tmp/projects/mwh/SingleCellProject/yolo/single_cell_aug/train_labels.txt"
+#val_labels: "/root/autodl-tmp/projects/mwh/SingleCellProject/yolo/single_cell_aug/test_labels.txt"
+#num_classes: 2
+#img_size: 300
+#num_workers: 16
+#pin_memory: true
+#mean: [0.485, 0.456, 0.406]
+#std: [0.229, 0.224, 0.225]
+#augment: null
+#use_weighted_sampler: false
+  
+#  vflip_p: 0.3
+#  rotate_deg: 20
+#  brightness: 0.3
+#  contrast: 0.3
+#  saturation: 0.3
+#  hue: 0.1
+#  random_crop_scale: [0.75, 1.0]
+
+
+#第13版
+#train_labels: "/root/autodl-tmp/projects/mwh/SingleCellProject/yolo/single_cell_aug/train_labels.txt"
+#val_labels: "/root/autodl-tmp/projects/mwh/SingleCellProject/yolo/single_cell_aug/test_labels.txt"
+
+train_labels: "/root/autodl-tmp/projects/myq/SingleCellProject/dataset/aug_260323/train_labels.txt"
+val_labels: "/root/autodl-tmp/projects/myq/SingleCellProject/dataset/aug_260323/val_labels.txt"
+
+# 12.23修改：更新 train/val 路径到新增强数据集
+#train_labels: "/root/autodl-tmp/projects/mwh/SingleCellProject/yolo_o/aug_o/train_labels.txt"  #预训练+original数据
+#val_labels:   "/root/autodl-tmp/projects/mwh/SingleCellProject/yolo_o/aug_o/val_labels.txt"
+
+#12.30修改 可解释性
+#train_labels: "/root/autodl-tmp/projects/mwh/SingleCellProject/feature_o/aug_o_f/train_labels.txt"
+#val_labels:   "/root/autodl-tmp/projects/mwh/SingleCellProject/feature_o/aug_o_f/val_labels.txt"
+
+#12.31修改 预训练+modified数据
+#train_labels: "/root/autodl-tmp/projects/mwh/SingleCellProject/yolo_m/aug_m/train_labels.txt"
+#val_labels:   "/root/autodl-tmp/projects/mwh/SingleCellProject/yolo_m/aug_m/val_labels.txt"
+
+num_classes: 2
+img_size: 224 #600
+num_workers: 16 #16  # 改成 8，提高数据加载速度
+pin_memory: true
+mean: [0.485, 0.456, 0.406]
+std: [0.229, 0.224, 0.225]
+augment: 
+#  vflip_p: 0.3
+  hflip_p: 0.5
+  rotate_deg: 10
+  brightness: 0.1
+#  contrast: 0.3
+#  saturation: 0.3
+#  hue: 0.1
+#  random_crop_scale: [0.75, 1.0]
+use_weighted_sampler: True
+

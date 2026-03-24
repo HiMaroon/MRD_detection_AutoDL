@@ -1,0 +1,16 @@
+#回到第6版之后
+# configs/config.yaml
+defaults:
+  - data
+  - model
+  - train
+  - wandb
+
+
+#应该是第13版但检查点文件大小还是不对
+## configs/config.yaml
+#defaults:
+#  - data
+#  - model
+#  - train
+#  - wandb

@@ -1,0 +1,9 @@
+# configs/wandb.yaml  顶层就这几个键，不要再包一层 wandb:
+project: "singlecell"        # 你想在 WandB 上看到的项目名
+entity: ""                   # 如果你有 wandb 账号就填用户名，没有可以留空或删掉这一行
+mode: "online"             # 没登录/不想上传就用 disabled 或 offline
+name: "main_260323_2class"
+tags:                        # 想打什么标签都行，也可以留空列表
+  - "MAIN"
+  - "yolo11m"
+  # - "without0"

@@ -1,0 +1,99 @@
+#v0
+output_root: "/root/autodl-tmp/projects/myq/SingleCellProject/outputs/260323_576_0.65_2class/"
+batch_size: 512 #512
+max_epochs: 50
+precision: "16-mixed"
+devices: 1
+accumulate_grad_batches: 1
+seed: 42
+use_wandb: True
+optimizer:
+  name: "adamw"
+  lr: 5e-5
+  weight_decay: 1e-3
+scheduler:
+  name: "cosine"
+  warmup_epochs: 10
+callbacks:
+  early_stopping:
+    monitor: "val/acc_macro"
+    mode: "max"
+    patience: 10
+    min_delta: 0.00001
+  checkpoint:
+    monitor: "val/acc_macro"
+    mode: "max"
+    save_top_k: 3
+    filename: "{epoch:02d}-{val_acc_macro:.4f}"
+    save_last: true   # 加这一行
+#trainer:
+#  resume_from_checkpoint:"/root/autodl-tmp/projects/mwh/SingleCellProject/outputs/classification/epoch=16-val_auroc=0.0000.ckpt"
+
+
+#应该是第13版但检查点文件大小还是不对
+#output_root: "/root/autodl-#tmp/projects/mwh/SingleCellProject/outputs/classification/"
+#batch_size: 64
+#max_epochs: 60
+#precision: "16-mixed"
+#devices: 1
+#accumulate_grad_batches: 1
+#seed: 42
+#use_wandb: false
+#optimizer:
+#  name: "adamw"
+#  lr: 5e-5
+#  weight_decay: 1e-3
+#  momentum: 0.9
+ #这是啥来着？
+#scheduler:
+#  name: "cosine"
+#  warmup_epochs: 10
+#callbacks:
+#  early_stopping:
+#    monitor: "val/auroc"
+#    mode: "max"
+#    patience: 10
+#    min_delta: 0.001
+#  checkpoint:
+#    monitor: "val/auroc"
+#    mode: "max"
+#    save_top_k: 3
+#    filename: "{epoch:02d}-{val_auroc:.4f}"
+
+
+#不知道哪一版
+#output_root: "/root/autodl-tmp/projects/mwh/SingleCellProject/outputs/classification/"
+#batch_size: 64
+#max_epochs: 60
+#precision: "16-mixed"
+#devices: 1
+#accumulate_grad_batches: 1
+#seed: 42
+#use_wandb: false
+
+#optimizer:
+#  name: "sgd"
+#  lr: 1e-3
+#  weight_decay: 1e-3
+#  momentum: 0.9
+
+# 关键：只用 ReduceLROnPlateau，最稳、最简单、最有效！
+#scheduler:
+#  name: "plateau_only"      # ← 必须是这个名字
+#  warmup_epochs: 8          # 前8轮快速热身，SGD 推荐 8~12
+
+#callbacks:
+#  early_stopping:
+#    monitor: "val/auroc"
+#    mode: "max"
+#    patience: 15
+#    min_delta: 0.001
+#    verbose: true
+
+#  checkpoint:
+#    monitor: "val/auroc"
+#    mode: "max"
+#    save_top_k: 3
+#    save_last: true
+#    verbose: true
+#    filename: "{epoch:02d}-{val_auroc:.4f}-{val_f1:.4f}"
