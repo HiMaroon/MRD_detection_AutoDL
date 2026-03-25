@@ -263,14 +263,14 @@ def DataPicGenerator_chunked(src_dir, dst_dir, aug_num=5, chunk_size=100):
 if __name__ == "__main__":
     pathTrain = "/root/autodl-tmp/projects/myq/SingleCellProject/dataset/singlecell_260323/train"
     pathVal   = "/root/autodl-tmp/projects/myq/SingleCellProject/dataset/singlecell_260323/val"    
-    outputdir = "/root/autodl-tmp/projects/myq/SingleCellProject/dataset/aug_260323"
+    outputdir = "/root/autodl-tmp/projects/myq/SingleCellProject/dataset/aug10_260323"
     
     start_time = time.time()
     
     # 选择增强方式：
     # 方式1: 标准批处理（推荐，平衡性能和内存）
-    DataPicGenerator_batch(pathTrain, os.path.join(outputdir, 'train'), aug_num=5)
-    DataPicGenerator_batch(pathVal, os.path.join(outputdir, 'val'), aug_num=5)
+    DataPicGenerator_batch(pathTrain, os.path.join(outputdir, 'train'), aug_num=10)
+    DataPicGenerator_batch(pathVal, os.path.join(outputdir, 'val'), aug_num=10)
     
     # 方式2: 分块处理（适合超大文件集，内存占用更低）
     # DataPicGenerator_chunked(pathTrain, os.path.join(outputdir, 'train'), aug_num=5, chunk_size=200)

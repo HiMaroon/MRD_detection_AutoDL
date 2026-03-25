@@ -23,8 +23,8 @@
 #train_labels: "/root/autodl-tmp/projects/mwh/SingleCellProject/yolo/single_cell_aug/train_labels.txt"
 #val_labels: "/root/autodl-tmp/projects/mwh/SingleCellProject/yolo/single_cell_aug/test_labels.txt"
 
-train_labels: "/root/autodl-tmp/projects/myq/SingleCellProject/dataset/aug_260323/train_labels.txt"
-val_labels: "/root/autodl-tmp/projects/myq/SingleCellProject/dataset/aug_260323/val_labels.txt"
+train_labels: "/root/autodl-tmp/projects/myq/SingleCellProject/dataset/aug10_260323/train_labels.txt"
+val_labels: "/root/autodl-tmp/projects/myq/SingleCellProject/dataset/aug10_260323/val_labels.txt"
 
 # 12.23修改：更新 train/val 路径到新增强数据集
 #train_labels: "/root/autodl-tmp/projects/mwh/SingleCellProject/yolo_o/aug_o/train_labels.txt"  #预训练+original数据

@@ -1,5 +1,5 @@
 #v0
-output_root: "/root/autodl-tmp/projects/myq/SingleCellProject/outputs/260323_576_0.65_2class/"
+output_root: "/root/autodl-tmp/projects/myq/SingleCellProject/outputs/260323_576_0.65_2class_aug10/"
 batch_size: 512 #512
 max_epochs: 50
 precision: "16-mixed"

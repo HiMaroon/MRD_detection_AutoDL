@@ -24,9 +24,20 @@ class LabelFileDataset(Dataset):
                 big_label = int(parts[1])   # 第二列，大类
                 small_label = int(parts[2]) # 第三列，小类（现在不用）
 
-                # 保持你原来的逻辑：大类 2 → 0，其它不变
+                
+                # y = big_label
+
                 y = 0 if big_label == 2 else big_label
+
                 # y = small_label
+
+                # if small_label in (8,10):
+                #     y = 0
+                # elif small_label==9:
+                #     y = 8
+                # else:
+                #     y = small_label
+                
                 self.samples.append((img, y))
 
         self.img_size = img_size

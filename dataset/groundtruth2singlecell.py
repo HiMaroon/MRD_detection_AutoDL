@@ -345,15 +345,15 @@ if __name__ == "__main__":
     datasets = [
         {
             "name": "train_groundtruth",
-            "label": r"/root/autodl-tmp/data/MAIN_imgs_split_260312/Train",  # 标注JSON目录
-            "img": r"/root/autodl-tmp/data/MAIN_imgs_split_260312/Train",   # 原始图像目录
-            "out": r"/root/autodl-tmp/projects/myq/SingleCellProject/yolo/singlecell/train_groundtruth"
+            "label": r"/root/autodl-tmp/data/MAIN_imgs_split_260323/Train",  # 标注JSON目录
+            "img": r"/root/autodl-tmp/data/MAIN_imgs_split_260323/Train",   # 原始图像目录
+            "out": r"/root/autodl-tmp/projects/myq/SingleCellProject/dataset/singlecell_260323/train_groundtruth3"
         },
         {
             "name": "val_groundtruth",
-            "label": r"/root/autodl-tmp/data/MAIN_imgs_split_260312/Val",  # 标注JSON目录
-            "img": r"/root/autodl-tmp/data/MAIN_imgs_split_260312/Val",   # 原始图像目录
-            "out": r"/root/autodl-tmp/projects/myq/SingleCellProject/yolo/singlecell/val_groundtruth"
+            "label": r"/root/autodl-tmp/data/MAIN_imgs_split_260323/Val",  # 标注JSON目录
+            "img": r"/root/autodl-tmp/data/MAIN_imgs_split_260323/Val",   # 原始图像目录
+            "out": r"/root/autodl-tmp/projects/myq/SingleCellProject/dataset/singlecell_260323/val_groundtruth"
         },
     ]
 
