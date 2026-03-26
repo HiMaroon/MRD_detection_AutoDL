@@ -39,19 +39,22 @@ val_labels: "/root/autodl-tmp/projects/myq/SingleCellProject/dataset/aug10_26032
 #val_labels:   "/root/autodl-tmp/projects/mwh/SingleCellProject/yolo_m/aug_m/val_labels.txt"
 
 num_classes: 2
-img_size: 224 #600
+img_size: 576
 num_workers: 16 #16  # 改成 8，提高数据加载速度
 pin_memory: true
 mean: [0.485, 0.456, 0.406]
 std: [0.229, 0.224, 0.225]
 augment: 
-#  vflip_p: 0.3
+  vflip_p: 0.5
   hflip_p: 0.5
-  rotate_deg: 10
+  rotate_angles: [0, 90, 180, 270]
   brightness: 0.1
-#  contrast: 0.3
-#  saturation: 0.3
-#  hue: 0.1
-#  random_crop_scale: [0.75, 1.0]
+  contrast: 0.1
+  saturation: 0.1
+  sharpness_factor: 2.0
+  sharpness_p: 0.5
+#  hue: 0.0
+#  random_crop_scale: null
+# 训练集在线重复采样倍数（仅 train 生效；1=不重复）
+repeat_factor: 4
 use_weighted_sampler: True
-

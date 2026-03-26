@@ -4,10 +4,22 @@ from torch.utils.data import Dataset
 from PIL import Image
 import torch
 import torchvision.transforms as T
+import torchvision.transforms.functional as TF
+import random
+
+
+class DiscreteRotate:
+    """Rotate by sampling from a discrete angle set (e.g. [0, 90, 180, 270])."""
+
+    def __init__(self, angles):
+        self.angles = [float(a) for a in angles]
+
+    def __call__(self, img):
+        return TF.rotate(img, random.choice(self.angles))
 
 
 class LabelFileDataset(Dataset):
-    def __init__(self, label_file, img_size, mean, std, augment=None, training=True):
+    def __init__(self, label_file, img_size, mean, std, augment=None, training=True, repeat_factor=1):
         self.samples = []
         with open(label_file, "r", encoding="utf-8") as f:
             for line in f:
@@ -42,6 +54,8 @@ class LabelFileDataset(Dataset):
 
         self.img_size = img_size
         self.training = training
+        self.repeat_factor = max(1, int(repeat_factor)) if training else 1
+        self.base_len = len(self.samples)
         self.transform = self._build_transform(img_size, mean, std, augment, training)
 
     def _build_transform(self, img_size, mean, std, augment, training):
@@ -73,9 +87,13 @@ class LabelFileDataset(Dataset):
                 t.append(T.RandomVerticalFlip(p=vflip_p))
 
             # 旋转
-            rotate_deg = augment.get("rotate_deg", 0)
-            if rotate_deg > 0:
-                t.append(T.RandomRotation(degrees=rotate_deg))
+            rotate_angles = augment.get("rotate_angles", None)
+            if rotate_angles:
+                t.append(DiscreteRotate(rotate_angles))
+            else:
+                rotate_deg = augment.get("rotate_deg", 0)
+                if rotate_deg > 0:
+                    t.append(T.RandomRotation(degrees=rotate_deg))
 
             # 颜色抖动
             if any(k in augment for k in ["brightness", "contrast", "saturation", "hue"]):
@@ -87,6 +105,12 @@ class LabelFileDataset(Dataset):
                         hue=augment.get("hue", 0),
                     )
                 )
+
+            # 锐度增强（与 dataset/Aug.py 对齐）
+            sharpness_factor = augment.get("sharpness_factor", None)
+            sharpness_p = augment.get("sharpness_p", 0.0)
+            if sharpness_factor is not None and sharpness_p > 0:
+                t.append(T.RandomAdjustSharpness(sharpness_factor=sharpness_factor, p=sharpness_p))
         else:
             # 验证 / 不使用增广：只做 Resize
             t.append(T.Resize((img_size, img_size)))
@@ -102,10 +126,13 @@ class LabelFileDataset(Dataset):
         return T.Compose(t)
 
     def __len__(self):
-        return len(self.samples)
+        return self.base_len * self.repeat_factor
 
     def __getitem__(self, idx):
-        path, y = self.samples[idx]
+        if self.base_len == 0:
+            raise IndexError("Dataset is empty.")
+
+        path, y = self.samples[idx % self.base_len]
         try:
             img = Image.open(path).convert("RGB")
             img = self.transform(img)

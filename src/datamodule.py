@@ -27,6 +27,7 @@ class SingleCellDataModule(pl.LightningDataModule):
             self.cfg["std"],
             self.cfg.get("augment"),
             True,
+            self.cfg.get("repeat_factor", 1),
         )
         self.val_ds = LabelFileDataset(
             self.cfg["val_labels"],
