@@ -496,38 +496,38 @@ def main():
 
     tasks = [
         {
-            "cell_result_csv": "/root/autodl-tmp/projects/myq/SingleCellProject/outputs_test/val_260323/val_results_20260324-200121.csv",
+            "cell_result_csv": "/root/autodl-tmp/projects/myq/SingleCellProject/outputs_test/260323_gt2yolo_576_0.65_2class_onlineAug/val/val_results.csv",
             "patient_info_xlsx": patient_info_xlsx,
-            "output_png": "/root/autodl-tmp/projects/myq/SingleCellProject/outputs_patient/val_260323/patient_ratio_from_cell_results.png",
-            "output_excel": "/root/autodl-tmp/projects/myq/SingleCellProject/outputs_patient/val_260323/patient_ratio_from_cell_results.xlsx",
+            "output_png": "/root/autodl-tmp/projects/myq/SingleCellProject/outputs_patient/260323_gt2yolo_576_0.65_2class_onlineAug/val/patient_ratio_from_cell_results.png",
+            "output_excel": "/root/autodl-tmp/projects/myq/SingleCellProject/outputs_patient/260323_gt2yolo_576_0.65_2class_onlineAug/val/patient_ratio_from_cell_results.xlsx",
         },
 
         {
-            "cell_result_csv": "/root/autodl-tmp/projects/myq/SingleCellProject/outputs_test/train_260323/train_results_20260324-195949.csv",
+            "cell_result_csv": "/root/autodl-tmp/projects/myq/SingleCellProject/outputs_test/260323_gt2yolo_576_0.65_2class_onlineAug/train/val_results.csv",
             "patient_info_xlsx": patient_info_xlsx,
-            "output_png": "/root/autodl-tmp/projects/myq/SingleCellProject/outputs_patient/train_260323/patient_ratio_from_cell_results.png",
-            "output_excel": "/root/autodl-tmp/projects/myq/SingleCellProject/outputs_patient/train_260323/patient_ratio_from_cell_results.xlsx",
+            "output_png": "/root/autodl-tmp/projects/myq/SingleCellProject/outputs_patient/260323_gt2yolo_576_0.65_2class_onlineAug/train/patient_ratio_from_cell_results.png",
+            "output_excel": "/root/autodl-tmp/projects/myq/SingleCellProject/outputs_patient/260323_gt2yolo_576_0.65_2class_onlineAug/train/patient_ratio_from_cell_results.xlsx",
         },
 
         {
-            "cell_result_csv": "/root/autodl-tmp/projects/myq/SingleCellProject/outputs_test/test_BJH_260323/val_results_20260324-195044.csv",
+            "cell_result_csv": "/root/autodl-tmp/projects/myq/SingleCellProject/outputs_test/260323_gt2yolo_576_0.65_2class_onlineAug/test_BJH/val_results.csv",
             "patient_info_xlsx": patient_info_xlsx,
-            "output_png": "/root/autodl-tmp/projects/myq/SingleCellProject/outputs_patient/test_BJH_260323/patient_ratio_from_cell_results.png",
-            "output_excel": "/root/autodl-tmp/projects/myq/SingleCellProject/outputs_patient/test_BJH_260323/patient_ratio_from_cell_results.xlsx",
+            "output_png": "/root/autodl-tmp/projects/myq/SingleCellProject/outputs_patient/260323_gt2yolo_576_0.65_2class_onlineAug/test_BJH/patient_ratio_from_cell_results.png",
+            "output_excel": "/root/autodl-tmp/projects/myq/SingleCellProject/outputs_patient/260323_gt2yolo_576_0.65_2class_onlineAug/test_BJH/patient_ratio_from_cell_results.xlsx",
         },
 
         {
-            "cell_result_csv": "/root/autodl-tmp/projects/myq/SingleCellProject/outputs_test/test_FXH_noALL_260323/val_results_20260324-195123.csv",
+            "cell_result_csv": "/root/autodl-tmp/projects/myq/SingleCellProject/outputs_test/260323_gt2yolo_576_0.65_2class_onlineAug/test_FXH_noALL/val_results.csv",
             "patient_info_xlsx": patient_info_xlsx,
-            "output_png": "/root/autodl-tmp/projects/myq/SingleCellProject/outputs_patient/test_FXH_noALL_260323/patient_ratio_from_cell_results.png",
-            "output_excel": "/root/autodl-tmp/projects/myq/SingleCellProject/outputs_patient/test_FXH_noALL_260323/patient_ratio_from_cell_results.xlsx",
+            "output_png": "/root/autodl-tmp/projects/myq/SingleCellProject/outputs_patient/260323_gt2yolo_576_0.65_2class_onlineAug/test_FXH_noALL/patient_ratio_from_cell_results.png",
+            "output_excel": "/root/autodl-tmp/projects/myq/SingleCellProject/outputs_patient/260323_gt2yolo_576_0.65_2class_onlineAug/test_FXH_noALL/patient_ratio_from_cell_results.xlsx",
         },
 
         {
-            "cell_result_csv": "/root/autodl-tmp/projects/myq/SingleCellProject/outputs_test/test_TJMU_260323/val_results_20260324-195015.csv",
+            "cell_result_csv": "/root/autodl-tmp/projects/myq/SingleCellProject/outputs_test/260323_gt2yolo_576_0.65_2class_onlineAug/test_TJMU/val_results.csv",
             "patient_info_xlsx": patient_info_xlsx,
-            "output_png": "/root/autodl-tmp/projects/myq/SingleCellProject/outputs_patient/test_TJMU_260323/patient_ratio_from_cell_results.png",
-            "output_excel": "/root/autodl-tmp/projects/myq/SingleCellProject/outputs_patient/test_TJMU_260323/patient_ratio_from_cell_results.xlsx",
+            "output_png": "/root/autodl-tmp/projects/myq/SingleCellProject/outputs_patient/260323_gt2yolo_576_0.65_2class_onlineAug/test_TJMU/patient_ratio_from_cell_results.png",
+            "output_excel": "/root/autodl-tmp/projects/myq/SingleCellProject/outputs_patient/260323_gt2yolo_576_0.65_2class_onlineAug/test_TJMU/patient_ratio_from_cell_results.xlsx",
         },
     ]
 

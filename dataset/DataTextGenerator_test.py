@@ -30,30 +30,33 @@ cell_dict_small = {
 
 
 # ============================== 生成标签文件 ==============================
+from pathlib import Path
+
 def DataTxtGenerator(output_dir):
-    for split_name in ['test_FXH_noALL', 'test_BJH', 'test_TJMU','train', 'val']:
-        img_dir = os.path.join(output_dir, split_name)
-        if not os.path.exists(img_dir):
+    output_dir = Path(output_dir)
+
+    for split_name in ['test_FXH_noALL', 'test_BJH', 'test_TJMU','train', 'val','train_groundtruth', 'val_groundtruth']:
+        img_dir = output_dir / split_name
+
+        if not img_dir.exists():
             print(f"ℹ️ {split_name} 目录不存在，跳过标签生成。")
             continue
-            
-        # 同样过滤 .ipynb_checkpoints
-        imgs = [f for f in os.listdir(img_dir) if f.lower().endswith('.png') and '.ipynb_checkpoints' not in f]
-        txt_path = os.path.join(output_dir, f"{split_name}_labels.txt")
+
+        imgs = list(img_dir.rglob("*.png"))
+        imgs = [p for p in imgs if ".ipynb_checkpoints" not in str(p)]
+
+        txt_path = output_dir / f"{split_name}_labels.txt"
 
         with open(txt_path, 'w', encoding='utf-8') as f:
-            for img_name in tqdm(imgs, desc=f"生成标签: {split_name}", unit="line"):
-                # base_name = img_name.rsplit('_', 1)[0]
-                # parts = base_name.split('_')
-                # raw_label = parts[-1]
-                raw_label = img_name.split('.')[0].split('_')[-1]  
-          
+            for img_path in tqdm(imgs, desc=f"生成标签: {split_name}", unit="line"):
+                img_name = img_path.name
+
+                raw_label = img_name.split('.')[0].split('_')[-1]
 
                 label_big = cell_dict_big.get(raw_label, 0)
                 label_small = cell_dict_small.get(raw_label, 0)
 
-                img_path = os.path.join(output_dir, split_name, img_name)
-                f.write(f"{img_path} {label_big} {label_small}\n")
+                f.write(f"{str(img_path)} {label_big} {label_small}\n")
 
 
 if __name__ == "__main__":

@@ -221,12 +221,12 @@ def calculate_and_save_metrics(df, output_dir, split, timestamp, num_classes):
     final_out_dir = Path(output_dir)
     final_out_dir.mkdir(parents=True, exist_ok=True)
 
-    txt_path = final_out_dir / f"{split}_metrics_{timestamp}.txt"
+    txt_path = final_out_dir / f"{split}_metrics.txt"
     with open(txt_path, "w", encoding="utf-8") as f:
         f.write("\n".join(report_text))
 
     # 可选：再保存一份 json，方便后处理
-    json_path = final_out_dir / f"{split}_metrics_{timestamp}.json"
+    json_path = final_out_dir / f"{split}_metrics.json"
     with open(json_path, "w", encoding="utf-8") as f:
         json.dump(metrics, f, ensure_ascii=False, indent=2)
 
@@ -317,7 +317,7 @@ def run_test_on_split(split: str = "val", ckpt_path: str = None, test_data_sir: 
     final_out_dir.mkdir(parents=True, exist_ok=True)
 
     df = pd.DataFrame(all_results).sort_values("image").reset_index(drop=True)
-    csv_path = final_out_dir / f"{split}_results_{timestamp}.csv"
+    csv_path = final_out_dir / f"{split}_results.csv"
     df.to_csv(csv_path, index=False)
 
     print(f"\n✅ {split.upper()} 测试完成！")
@@ -349,31 +349,31 @@ def main():
     print("     EfficientNet 分类模型推理测试（兼容二分类 / 多分类）".center(70))
     print("=" * 70)
 
-    best_ckpt = "/root/autodl-tmp/projects/myq/SingleCellProject/outputs/260323_576_0.65_2class_noAug/epoch=33-val_acc_macro=0.0000.ckpt"
+    best_ckpt = "/root/autodl-tmp/projects/myq/SingleCellProject/outputs/260323_gt2yolo_576_0.65_2class_onlineAug/epoch=23-val_acc_macro=0.0000.ckpt"
 
     # --- TJMU ---
     test_data_sir = "/root/autodl-tmp/projects/myq/SingleCellProject/dataset/singlecell_260323/test_TJMU_labels.txt"
-    res_dir = "/root/autodl-tmp/projects/myq/SingleCellProject/outputs_test/test_TJMU_260323_noAug/"
+    res_dir = "/root/autodl-tmp/projects/myq/SingleCellProject/outputs_test/260323_gt2yolo_576_0.65_2class_onlineAug/test_TJMU/"
     run_test_on_split(split="val", ckpt_path=best_ckpt, test_data_sir=test_data_sir, output_dir=res_dir)
 
     # --- BJH ---
     test_data_sir = "/root/autodl-tmp/projects/myq/SingleCellProject/dataset/singlecell_260323/test_BJH_labels.txt"
-    res_dir = "/root/autodl-tmp/projects/myq/SingleCellProject/outputs_test/test_BJH_260323_noAug/"
+    res_dir = "/root/autodl-tmp/projects/myq/SingleCellProject/outputs_test/260323_gt2yolo_576_0.65_2class_onlineAug/test_BJH/"
     run_test_on_split(split="val", ckpt_path=best_ckpt, test_data_sir=test_data_sir, output_dir=res_dir)
 
     # --- FXH_noALL ---
     test_data_sir = "/root/autodl-tmp/projects/myq/SingleCellProject/dataset/singlecell_260323/test_FXH_noALL_labels.txt"
-    res_dir = "/root/autodl-tmp/projects/myq/SingleCellProject/outputs_test/test_FXH_noALL_260323_noAug/"
+    res_dir = "/root/autodl-tmp/projects/myq/SingleCellProject/outputs_test/260323_gt2yolo_576_0.65_2class_onlineAug/test_FXH_noALL/"
     run_test_on_split(split="val", ckpt_path=best_ckpt, test_data_sir=test_data_sir, output_dir=res_dir)
 
     # --- train ---
     test_data_sir = "/root/autodl-tmp/projects/myq/SingleCellProject/dataset/singlecell_260323/train_labels.txt"
-    res_dir = "/root/autodl-tmp/projects/myq/SingleCellProject/outputs_test/train_260323_noAug/"
-    run_test_on_split(split="train", ckpt_path=best_ckpt, test_data_sir=test_data_sir, output_dir=res_dir)
+    res_dir = "/root/autodl-tmp/projects/myq/SingleCellProject/outputs_test/260323_gt2yolo_576_0.65_2class_onlineAug/train/"
+    run_test_on_split(split="val", ckpt_path=best_ckpt, test_data_sir=test_data_sir, output_dir=res_dir)
 
     # --- val ---
     test_data_sir = "/root/autodl-tmp/projects/myq/SingleCellProject/dataset/singlecell_260323/val_labels.txt"
-    res_dir = "/root/autodl-tmp/projects/myq/SingleCellProject/outputs_test/val_260323_noAug/"
+    res_dir = "/root/autodl-tmp/projects/myq/SingleCellProject/outputs_test/260323_gt2yolo_576_0.65_2class_onlineAug/val/"
     run_test_on_split(split="val", ckpt_path=best_ckpt, test_data_sir=test_data_sir, output_dir=res_dir)
 
 

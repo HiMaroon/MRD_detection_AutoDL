@@ -108,15 +108,33 @@ class LitSingleCell(nn.Module):
         # 加载本地预训练权重
         local_weight_path = cfg_model.get("local_weight_path", None)
         if local_weight_path:
-            state_dict = torch.load(local_weight_path, map_location="cpu")
-            state_dict.pop("classifier.weight", None)
-            state_dict.pop("classifier.bias", None)
-            state_dict.pop("fc.weight", None)
-            state_dict.pop("fc.bias", None)
-            state_dict.pop("head.weight", None)
-            state_dict.pop("head.bias", None)
+            # state_dict = torch.load(local_weight_path, map_location="cpu")
+            # state_dict.pop("classifier.weight", None)
+            # state_dict.pop("classifier.bias", None)
+            # state_dict.pop("fc.weight", None)
+            # state_dict.pop("fc.bias", None)
+            # state_dict.pop("head.weight", None)
+            # state_dict.pop("head.bias", None)
+            # msg = self.model.load_state_dict(state_dict, strict=False)
+            
+            raw = torch.load(local_weight_path, map_location="cpu")
+            state_dict = raw["state_dict"] if isinstance(raw, dict) and "state_dict" in raw else raw
 
-            msg = self.model.load_state_dict(state_dict, strict=False)
+            clean_state = {}
+            for k, v in state_dict.items():
+                if k.startswith("core.model."):
+                    nk = k[len("core.model."):]
+                elif k.startswith("model."):
+                    nk = k[len("model."):]
+                else:
+                    nk = k
+                clean_state[nk] = v
+
+            for head_k in ["classifier.weight","classifier.bias","fc.weight","fc.bias","head.weight","head.bias"]:
+                clean_state.pop(head_k, None)
+
+            msg = self.model.load_state_dict(clean_state, strict=False)
+            
             print(f"[Load Weights] {local_weight_path}")
             print("Missing keys:", len(msg.missing_keys))
             print("Unexpected keys:", len(msg.unexpected_keys))

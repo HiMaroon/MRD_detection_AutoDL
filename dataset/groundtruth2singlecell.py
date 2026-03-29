@@ -347,7 +347,7 @@ if __name__ == "__main__":
             "name": "train_groundtruth",
             "label": r"/root/autodl-tmp/data/MAIN_imgs_split_260323/Train",  # 标注JSON目录
             "img": r"/root/autodl-tmp/data/MAIN_imgs_split_260323/Train",   # 原始图像目录
-            "out": r"/root/autodl-tmp/projects/myq/SingleCellProject/dataset/singlecell_260323/train_groundtruth3"
+            "out": r"/root/autodl-tmp/projects/myq/SingleCellProject/dataset/singlecell_260323/train_groundtruth"
         },
         {
             "name": "val_groundtruth",

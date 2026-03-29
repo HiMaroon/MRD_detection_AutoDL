@@ -1,5 +1,5 @@
 #v0
-output_root: "/root/autodl-tmp/projects/myq/SingleCellProject/outputs/260323_576_0.65_2class_aug10/"
+output_root: "/root/autodl-tmp/projects/myq/SingleCellProject/outputs/260323_gt2yolo_576_0.65_2class_onlineAug/"
 batch_size: 512 #512
 max_epochs: 50
 precision: "16-mixed"
@@ -26,8 +26,8 @@ callbacks:
     save_top_k: 3
     filename: "{epoch:02d}-{val_acc_macro:.4f}"
     save_last: true   # 加这一行
-#trainer:
-#  resume_from_checkpoint:"/root/autodl-tmp/projects/mwh/SingleCellProject/outputs/classification/epoch=16-val_auroc=0.0000.ckpt"
+# trainer:
+#  resume_from_checkpoint:"/root/autodl-tmp/projects/myq/SingleCellProject/outputs/260323_gt_576_0.65_2class_onlineAug/epoch=40-val_acc_macro=0.0000.ckpt"
 
 
 #应该是第13版但检查点文件大小还是不对
