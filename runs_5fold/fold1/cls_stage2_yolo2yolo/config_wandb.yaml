@@ -1,0 +1,7 @@
+entity: ''
+mode: online
+name: main_260323_5fold_2class_gt2yolo_onlineAug
+project: singlecell
+tags:
+- MAIN
+- yolo11m

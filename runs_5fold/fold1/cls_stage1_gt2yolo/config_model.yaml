@@ -1,0 +1,6 @@
+arch: efficientnet_b0
+drop: 0.3
+drop_path: 0.1
+freeze_backbone_epochs: 5
+local_weight_path: /root/autodl-tmp/projects/mwh/SingleCellProject/weights/pytorch_model.bin
+pretrained: false

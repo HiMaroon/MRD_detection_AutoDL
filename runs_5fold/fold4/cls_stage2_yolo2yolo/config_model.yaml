@@ -1,0 +1,6 @@
+arch: efficientnet_b0
+drop: 0.3
+drop_path: 0.1
+freeze_backbone_epochs: 5
+local_weight_path: /root/autodl-tmp/projects/myq/SingleCellProject/runs_5fold/fold4/cls_stage1_gt2yolo/epoch=22-val_acc_macro=0.0000.ckpt
+pretrained: false

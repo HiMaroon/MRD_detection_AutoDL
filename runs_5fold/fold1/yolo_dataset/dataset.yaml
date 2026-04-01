@@ -1,0 +1,6 @@
+path: /root/autodl-tmp/projects/myq/SingleCellProject/runs_5fold/fold1/yolo_dataset
+train: images/train
+val: images/val
+nc: 1
+names:
+  0: '0'

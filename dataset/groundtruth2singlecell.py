@@ -160,7 +160,6 @@ def process_cells_from_ground_truth(points_json_path, image_path, output_dir,
         print(f"未在标注文件中找到有效多边形：{points_json_path}")
         return
     
-    print(f"从标注文件加载了 {len(gt_polygons)} 个细胞")
     
     # 如果未指定输出尺寸，默认与裁剪尺寸一致
     final_size = output_size if output_size is not None else crop_size
