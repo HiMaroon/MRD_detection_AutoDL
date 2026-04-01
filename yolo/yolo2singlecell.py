@@ -4,6 +4,7 @@ import numpy as np
 from pathlib import Path
 import os
 import math
+import concurrent.futures
 from tqdm import tqdm
 
 '''
@@ -285,10 +286,22 @@ def process_cells(segmentation_json_path, points_json_path, image_path, output_d
         valid_cell_count += 1
 
 
-def batch_process_directory(seg_json_dir, points_json_dir, image_dir, output_base_dir, 
-                          remove_background=True, filter_edge_cells=True, 
-                          min_circularity=0.8, min_area=10000, crop_size=576, 
-                          output_size=None, iou_threshold=0.5):
+def _build_stem_index(root_dir, exts):
+    """
+    为目录建立 stem->path 索引，避免在循环内反复 rglob 导致 O(N^2) 搜索。
+    """
+    root_dir = Path(root_dir)
+    idx = {}
+    for ext in exts:
+        for p in root_dir.rglob(f"*{ext}"):
+            idx.setdefault(p.stem, p)
+    return idx
+
+
+def batch_process_directory(seg_json_dir, points_json_dir, image_dir, output_base_dir,
+                          remove_background=True, filter_edge_cells=True,
+                          min_circularity=0.8, min_area=10000, crop_size=576,
+                          output_size=None, iou_threshold=0.5, num_workers=1):
     """
     批量处理目录
     """
@@ -299,43 +312,65 @@ def batch_process_directory(seg_json_dir, points_json_dir, image_dir, output_bas
     output_base_dir = Path(output_base_dir)
     
     seg_json_files = list(seg_json_dir.rglob("*.json"))
-    
-    for seg_json_file in tqdm(seg_json_files, desc="处理图像"):
-        # 构建对应的点标记 JSON 文件名
-        points_json_file = points_json_dir / seg_json_file.relative_to(seg_json_dir)
+    image_exts = ['.jpg', '.jpeg', '.png', '.bmp', '.tiff', '.tif']
+    image_stem_idx = _build_stem_index(image_dir, image_exts)
+    points_stem_idx = _build_stem_index(points_json_dir, ['.json'])
+
+    def _resolve_paths(seg_json_file):
+        rel = seg_json_file.relative_to(seg_json_dir)
+
+        # points json：优先同相对路径，其次按 stem 回退
+        points_json_file = points_json_dir / rel
         if not points_json_file.exists():
-            points_json_file = points_json_dir / seg_json_file.name
-        
-        # 构建对应的图像文件名
-        image_name = seg_json_file.stem
+            points_json_file = points_stem_idx.get(seg_json_file.stem)
+
+        # image：优先同相对路径同 stem，不同扩展名；其次按 stem 回退
         image_file = None
-        
-        for ext in ['.jpg', '.jpeg', '.png', '.bmp', '.tiff']:
-            potential_file = image_dir / f"{image_name}{ext}"
-            if potential_file.exists():
-                image_file = potential_file
+        for ext in image_exts:
+            candidate = image_dir / rel.with_suffix(ext)
+            if candidate.exists():
+                image_file = candidate
                 break
-        
         if image_file is None:
-            for ext in ['.jpg', '.jpeg', '.png', '.bmp', '.tiff']:
-                for img_file in image_dir.rglob(f"*{ext}"):
-                    if img_file.stem == image_name:
-                        image_file = img_file
-                        break
-                if image_file:
-                    break
-        
+            image_file = image_stem_idx.get(seg_json_file.stem)
+
+        return points_json_file, image_file
+
+    def _process_one(seg_json_file):
+        points_json_file, image_file = _resolve_paths(seg_json_file)
         if image_file is None:
-            print(f"未找到对应的图像文件：{image_name}")
-            continue
-        
-        if not points_json_file.exists():
-            print(f"未找到对应的标注 JSON 文件：{points_json_file}")
-            continue
-        
-        process_cells(seg_json_file, points_json_file, image_file, output_base_dir,
-                     remove_background, filter_edge_cells, min_circularity, min_area, 
-                     crop_size, output_size, iou_threshold)
+            return ("missing_image", seg_json_file.stem)
+        if points_json_file is None or not Path(points_json_file).exists():
+            return ("missing_points", str(seg_json_file))
+
+        process_cells(
+            seg_json_file, points_json_file, image_file, output_base_dir,
+            remove_background, filter_edge_cells, min_circularity, min_area,
+            crop_size, output_size, iou_threshold
+        )
+        return ("ok", None)
+
+    if num_workers is None or num_workers <= 1:
+        iterator = map(_process_one, seg_json_files)
+    else:
+        executor = concurrent.futures.ThreadPoolExecutor(max_workers=num_workers)
+        iterator = executor.map(_process_one, seg_json_files)
+
+    missing_image = 0
+    missing_points = 0
+    for status, detail in tqdm(iterator, total=len(seg_json_files), desc="处理图像"):
+        if status == "missing_image":
+            missing_image += 1
+        elif status == "missing_points":
+            missing_points += 1
+
+    if num_workers is not None and num_workers > 1:
+        executor.shutdown(wait=True)
+
+    if missing_image > 0:
+        print(f"⚠️ 未找到对应图像文件: {missing_image} 个")
+    if missing_points > 0:
+        print(f"⚠️ 未找到对应标注JSON: {missing_points} 个")
 
 if __name__ == "__main__":
     # 示例配置
