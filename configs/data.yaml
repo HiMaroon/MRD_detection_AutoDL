@@ -1,5 +1,5 @@
-train_labels: /root/autodl-tmp/projects/myq/SingleCellProject/runs_5fold/fold1/singlecell/train_labels.txt
-val_labels: /root/autodl-tmp/projects/myq/SingleCellProject/runs_5fold/fold1/singlecell/val_labels.txt
+train_labels: /root/autodl-tmp/projects/myq/SingleCellProject/dataset/singlecell_260323/train_labels.txt
+val_labels: /root/autodl-tmp/projects/myq/SingleCellProject/dataset/singlecell_260323/val_labels.txt
 num_classes: 2
 img_size: 224
 num_workers: 12

@@ -1,4 +1,4 @@
-output_root: /root/autodl-tmp/projects/myq/SingleCellProject/runs_5fold/fold1/cls_stage1_gt2yolo
+output_root: /root/autodl-tmp/projects/myq/SingleCellProject/outputs/260323_yolo2yolo_576_0.65_2class_onlineAug
 batch_size: 512
 max_epochs: 30
 precision: 16-mixed
