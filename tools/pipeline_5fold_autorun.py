@@ -39,6 +39,15 @@ class FoldInfo:
     val_ids: List[str]
 
 
+def parse_patient_id_from_image_name(name: str) -> str | None:
+    stem = Path(name).stem
+    prefix = stem.split("_")[0]
+    parts = prefix.split("-")
+    if len(parts) < 2:
+        return None
+    return f"{parts[0]}-{parts[1]}"
+
+
 # -----------------------------
 # 基础工具
 # -----------------------------
@@ -208,6 +217,36 @@ def build_folds(excel_path: Path, sheet_name: str, img_root: Path, n_splits: int
         train_ids = df.loc[~df.index.isin(val_idx), "正式编号"].tolist()
         folds.append(FoldInfo(fold_id=fold_id, train_ids=train_ids, val_ids=val_ids))
 
+    return df, folds, missing_df
+
+
+def load_folds_from_assignment(assignment_csv: Path, img_root: Path, n_splits: int) -> Tuple[pd.DataFrame, List[FoldInfo], pd.DataFrame]:
+    if not assignment_csv.exists():
+        raise FileNotFoundError(f"未找到 fold 划分文件: {assignment_csv}")
+
+    df = pd.read_csv(assignment_csv)
+    required_cols = {"正式编号", "fold"}
+    if not required_cols.issubset(set(df.columns)):
+        raise ValueError(f"{assignment_csv} 缺少必要列: {required_cols}")
+
+    df["正式编号"] = df["正式编号"].astype(str).str.strip()
+    df["fold"] = pd.to_numeric(df["fold"], errors="coerce")
+    df = df[df["fold"].notna()].copy()
+    df["fold"] = df["fold"].astype(int)
+
+    df["folder_exists"] = df["正式编号"].apply(lambda x: (img_root / str(x).strip()).is_dir())
+    missing_df = df[~df["folder_exists"]].copy()
+    df = df[df["folder_exists"]].copy().reset_index(drop=True)
+
+    available_folds = sorted(df["fold"].unique().tolist())
+    if len(available_folds) < n_splits:
+        print(f"⚠️ assignment 中仅检测到 {len(available_folds)} 个 fold，参数 n_splits={n_splits}")
+
+    folds: List[FoldInfo] = []
+    for fold_id in available_folds:
+        val_ids = df.loc[df["fold"] == fold_id, "正式编号"].tolist()
+        train_ids = df.loc[df["fold"] != fold_id, "正式编号"].tolist()
+        folds.append(FoldInfo(fold_id=fold_id, train_ids=train_ids, val_ids=val_ids))
     return df, folds, missing_df
 
 
@@ -458,30 +497,56 @@ def run_eval_and_patient_report(
 
 
 # -----------------------------
-# Pipeline
+# 5) 共享分割（方案三）
 # -----------------------------
-def run_fold_pipeline(args, fold: FoldInfo):
-    fold_root = Path(args.output_root) / f"fold{fold.fold_id}"
-    raw_split_root = fold_root / "raw_split"
-    train_dir = raw_split_root / "Train"
-    val_dir = raw_split_root / "Val"
-    ensure_clean_dir(train_dir)
-    ensure_clean_dir(val_dir)
+def filter_labels_by_patient_ids(src_txt: Path, dst_txt: Path, patient_ids: set[str]):
+    dst_txt.parent.mkdir(parents=True, exist_ok=True)
+    kept = []
+    for line in src_txt.read_text(encoding="utf-8").splitlines():
+        line = line.strip()
+        if not line:
+            continue
+        parts = line.split()
+        if len(parts) < 3:
+            continue
+        img_path = parts[0]
+        pid = parse_patient_id_from_image_name(Path(img_path).name)
+        if pid in patient_ids:
+            kept.append(line)
+    dst_txt.write_text("\n".join(kept) + ("\n" if kept else ""), encoding="utf-8")
 
-    # 建立训练/验证目录（患者级目录）
-    # 注意：不使用目录软链接，避免后续 YOLO / 单细胞脚本在软链接路径下的兼容性问题
-    for pid in fold.train_ids:
-        materialize_patient_dir(Path(args.img_root) / pid, train_dir / pid)
-    for pid in fold.val_ids:
-        materialize_patient_dir(Path(args.img_root) / pid, val_dir / pid)
 
-    # 1) Labelme -> YOLO
-    yolo_dataset = fold_root / "yolo_dataset"
+def prepare_shared_segmentation(args, folds: List[FoldInfo], out_root: Path) -> Dict[str, Path]:
+    """
+    方案三核心：
+    - 训练一套共享 YOLO 分割模型
+    - 只生成一套共享 singlecell
+    - 后续各 fold 只在分类阶段切 train/val 标签
+    """
+    shared_root = out_root / "shared_segmentation"
+    shared_main = shared_root / "raw_main"
+    ensure_clean_dir(shared_main)
+
+    all_ids = sorted({pid for f in folds for pid in (f.train_ids + f.val_ids)})
+    for pid in all_ids:
+        materialize_patient_dir(Path(args.img_root) / pid, shared_main / pid)
+
+    yolo_dataset = shared_root / "yolo_dataset"
     ensure_clean_dir(yolo_dataset)
-    json_to_yolo_dataset(train_dir, val_dir, yolo_dataset)
+    seg_val_ids = set(folds[0].val_ids)
+    seg_train_ids = [pid for pid in all_ids if pid not in seg_val_ids]
+    yolo_train_dir = shared_root / "yolo_split" / "Train"
+    yolo_val_dir = shared_root / "yolo_split" / "Val"
+    ensure_clean_dir(yolo_train_dir)
+    ensure_clean_dir(yolo_val_dir)
+    for pid in seg_train_ids:
+        materialize_patient_dir(shared_main / pid, yolo_train_dir / pid)
+    for pid in seg_val_ids:
+        materialize_patient_dir(shared_main / pid, yolo_val_dir / pid)
 
-    # 2) YOLO 训练
-    yolo_run_name = f"{args.exp_name}_fold{fold.fold_id}"
+    json_to_yolo_dataset(yolo_train_dir, yolo_val_dir, yolo_dataset)
+
+    yolo_run_name = f"{args.exp_name}_shared_seg"
     model = YOLO(args.yolo_init_weight)
     model.train(
         cfg=args.yolo_train_cfg,
@@ -492,15 +557,12 @@ def run_fold_pipeline(args, fold: FoldInfo):
         patience=args.yolo_patience,
     )
     yolo_best = Path(model.trainer.best)
-    # 释放 YOLO 训练对象显存，再进入后续流程
     del model
     release_memory()
 
-    # # 3) YOLO 推理（train/val + 3 外部测试）
-    pred_root = fold_root / "yolo_preds"
+    pred_root = shared_root / "yolo_preds"
     data_roots = {
-        "train": train_dir,
-        "val": val_dir,
+        "train": shared_main,
         "test_BJH": Path(args.test_bjh_root),
         "test_FXH_noALL": Path(args.test_fxh_root),
         "test_TJMU": Path(args.test_tjmu_root),
@@ -515,8 +577,7 @@ def run_fold_pipeline(args, fold: FoldInfo):
         use_half=(not args.yolo_predict_no_half),
     )
 
-    # # 4) YOLO 分割单细胞
-    singlecell_root = fold_root / "singlecell"
+    singlecell_root = shared_root / "singlecell"
     for split_name, input_root in data_roots.items():
         yolo2singlecell(
             seg_json_dir=pred_root / split_name,
@@ -533,9 +594,8 @@ def run_fold_pipeline(args, fold: FoldInfo):
             num_workers=args.yolo2sc_workers,
         )
 
-    # 5) GT 分割单细胞（仅 train/val）
     fast_gt2singlecell(
-        points_json_dir=train_dir,
+        points_json_dir=shared_main,
         output_base_dir=singlecell_root / "train_groundtruth",
         remove_background=False,
         filter_edge_cells=True,
@@ -545,22 +605,32 @@ def run_fold_pipeline(args, fold: FoldInfo):
         output_size=args.output_size,
         max_workers=args.gt_workers,
     )
-    # fast_gt2singlecell(
-    #     points_json_dir=val_dir,
-    #     output_base_dir=singlecell_root / "val_groundtruth",
-    #     remove_background=False,
-    #     filter_edge_cells=True,
-    #     min_circularity=args.min_circularity,
-    #     min_area=args.min_area,
-    #     crop_size=args.crop_size,
-    #     output_size=args.output_size,
-    #     max_workers=args.gt_workers,
-    # )
-
-    # 6) 生成标签 txt
     DataTxtGenerator(str(singlecell_root))
+    return {"shared_root": shared_root, "singlecell_root": singlecell_root}
 
-    # 7) 两阶段分类训练
+
+# -----------------------------
+# Pipeline
+# -----------------------------
+def run_fold_pipeline(args, fold: FoldInfo, shared_singlecell_root: Path):
+    fold_root = Path(args.output_root) / f"fold{fold.fold_id}"
+    singlecell_root = fold_root / "singlecell"
+    ensure_clean_dir(singlecell_root)
+
+    train_ids = set(fold.train_ids)
+    val_ids = set(fold.val_ids)
+
+    filter_labels_by_patient_ids(shared_singlecell_root / "train_labels.txt", singlecell_root / "train_labels.txt", train_ids)
+    filter_labels_by_patient_ids(shared_singlecell_root / "train_labels.txt", singlecell_root / "val_labels.txt", val_ids)
+    filter_labels_by_patient_ids(shared_singlecell_root / "train_groundtruth_labels.txt", singlecell_root / "train_groundtruth_labels.txt", train_ids)
+
+    for ext_name in ["test_BJH", "test_FXH_noALL", "test_TJMU"]:
+        src = shared_singlecell_root / f"{ext_name}_labels.txt"
+        dst = singlecell_root / f"{ext_name}_labels.txt"
+        if src.exists():
+            shutil.copy2(src, dst)
+
+    # 仅分类阶段 5-fold 训练（共享 singlecell）
     final_ckpt = run_two_stage_classifier_train(
         repo_root=Path(args.repo_root),
         fold_root=fold_root,
@@ -586,7 +656,7 @@ def run_fold_pipeline(args, fold: FoldInfo):
 
 
 def parse_args():
-    p = argparse.ArgumentParser(description="5-fold 自动化训练流水线（YOLO + 单细胞分类）")
+    p = argparse.ArgumentParser(description="5-fold 自动化训练流水线（方案三：共享分割 + 5折分类融合）")
     p.add_argument("--repo-root", default="/root/autodl-tmp/projects/myq/SingleCellProject")
     p.add_argument("--exp-name", default="exp_5fold")
     p.add_argument("--excel-path", default="/root/autodl-tmp/data/patient_data_260323.xlsx")
@@ -598,6 +668,12 @@ def parse_args():
     p.add_argument("--n-splits", type=int, default=5)
     p.add_argument("--random-state", type=int, default=42)
     p.add_argument("--folds", nargs="*", type=int, default=None, help="仅运行指定 fold，例如 --folds 1 3")
+    p.add_argument("--fold-split-mode", choices=["random", "reuse"], default="reuse", help="患者分折来源：随机重划分 或 读取已有划分")
+    p.add_argument(
+        "--fold-assignment-csv",
+        default="/root/autodl-tmp/projects/myq/SingleCellProject/runs_5fold/patient_base_fold_assignment.csv",
+        help="reuse 模式下使用的历史分折 CSV",
+    )
 
     p.add_argument("--yolo-init-weight", default="/root/autodl-tmp/projects/myq/SingleCellProject/yolo/cellseg/260323_MAIN_yolo11m/weights/best.pt")
     p.add_argument("--yolo-train-cfg", default="/root/autodl-tmp/projects/myq/SingleCellProject/yolo/yolotrain_1.0.yaml")
@@ -633,24 +709,34 @@ def main():
     out_root = Path(args.output_root)
     out_root.mkdir(parents=True, exist_ok=True)
 
-    base_df, folds, missing_df = build_folds(
-        excel_path=Path(args.excel_path),
-        sheet_name=args.sheet_name,
-        img_root=Path(args.img_root),
-        n_splits=args.n_splits,
-        random_state=args.random_state,
-    )
+    if args.fold_split_mode == "random":
+        base_df, folds, missing_df = build_folds(
+            excel_path=Path(args.excel_path),
+            sheet_name=args.sheet_name,
+            img_root=Path(args.img_root),
+            n_splits=args.n_splits,
+            random_state=args.random_state,
+        )
+        base_df.to_csv(out_root / "patient_base_fold_assignment.csv", index=False, encoding="utf-8-sig")
+    else:
+        base_df, folds, missing_df = load_folds_from_assignment(
+            assignment_csv=Path(args.fold_assignment_csv),
+            img_root=Path(args.img_root),
+            n_splits=args.n_splits,
+        )
+        base_df.to_csv(out_root / "patient_base_fold_assignment_reused.csv", index=False, encoding="utf-8-sig")
 
-    base_df.to_csv(out_root / "patient_base_fold_assignment.csv", index=False, encoding="utf-8-sig")
     if len(missing_df) > 0:
         missing_df.to_csv(out_root / "patients_missing_folders.csv", index=False, encoding="utf-8-sig")
+
+    shared_artifacts = prepare_shared_segmentation(args, folds, out_root)
 
     selected_folds = set(args.folds) if args.folds else None
     for fold in folds:
         if selected_folds and fold.fold_id not in selected_folds:
             continue
         print(f"\n{'=' * 100}\n🚀 开始执行 Fold {fold.fold_id}\n{'=' * 100}")
-        run_fold_pipeline(args, fold)
+        run_fold_pipeline(args, fold, shared_singlecell_root=shared_artifacts["singlecell_root"])
 
 
 if __name__ == "__main__":
