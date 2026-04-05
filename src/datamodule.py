@@ -4,7 +4,6 @@ from collections import Counter
 import torch
 from .datasets import LabelFileDataset
 import pytorch_lightning as pl
-import random
 
 class SingleCellDataModule(pl.LightningDataModule):
     def __init__(self, cfg_data, batch_size, num_workers, pin_memory=True):
@@ -18,6 +17,7 @@ class SingleCellDataModule(pl.LightningDataModule):
         self.val_ds = None
         self.class_weights = None
         self.train_sampler = None
+        self.class_counts = None
 
     def setup(self, stage=None):
         self.train_ds = LabelFileDataset(
@@ -38,8 +38,9 @@ class SingleCellDataModule(pl.LightningDataModule):
             False,
         )
 
-        # class weights（原逻辑保留）
+        # class weights（用于 loss re-weighting）
         counts = Counter([y for _, y in self.train_ds.samples])
+        self.class_counts = counts
         total = sum(counts.values())
 
         #self.class_weights = torch.tensor([1.0, 2.0])
@@ -70,9 +71,22 @@ class SingleCellDataModule(pl.LightningDataModule):
         # balanced_samples = pos_samples + neg_samples
         # self.train_ds.samples = balanced_samples   # 关键！直接替换 dataset 的 samples
 
-        # 关闭 WeightedRandomSampler（已经手动平衡了）
-        self.cfg["use_weighted_sampler"] = False
-        self.train_sampler = None
+        # 按配置决定是否启用 WeightedRandomSampler
+        use_weighted_sampler = self.cfg.get("use_weighted_sampler", False)
+        if use_weighted_sampler:
+            sample_weights = []
+            for _, y in self.train_ds.samples:
+                c = counts.get(y, 0)
+                sample_weights.append(0.0 if c == 0 else 1.0 / c)
+
+            self.train_sampler = WeightedRandomSampler(
+                weights=torch.tensor(sample_weights, dtype=torch.double),
+                num_samples=len(sample_weights),
+                replacement=True,
+            )
+            print(f"[Data] WeightedRandomSampler enabled. class_counts={dict(counts)}")
+        else:
+            self.train_sampler = None
 
     def train_dataloader(self):
         return DataLoader(

@@ -2,9 +2,11 @@ import os
 import sys
 import csv
 import math
+from collections import Counter
 import hydra
 import torch
 import pytorch_lightning as pl
+import torch.nn.functional as F
 from pytorch_lightning.loggers import WandbLogger
 from pytorch_lightning.callbacks import EarlyStopping, ModelCheckpoint, LearningRateMonitor
 from torchmetrics.functional.classification import (
@@ -49,10 +51,17 @@ def main(_cfg):
 
     device = "cuda" if torch.cuda.is_available() else "cpu"
     num_classes = data_cfg_["num_classes"]
+    class_counts = Counter([y for _, y in dm.train_ds.samples]) if dm.train_ds is not None else Counter()
+    print(f"[Data] train class_counts: {dict(class_counts)}")
+
+    imbalance_cfg = train_cfg_.get("imbalance", {})
+    use_class_weight_loss = imbalance_cfg.get("use_class_weight_loss", False)
+    model_class_weights = dm.class_weights if use_class_weight_loss else None
 
     core = LitSingleCell(
         model_cfg_,
         num_classes=num_classes,
+        class_weights=model_class_weights,
     )
 
     # ====== Freeze backbone 回调 ======
@@ -63,12 +72,15 @@ def main(_cfg):
 
     # ---------- Lightning Wrapper ----------
     class _Wrapper(pl.LightningModule):
-        def __init__(self, core, num_classes, train_cfg, out_root):
+        def __init__(self, core, num_classes, train_cfg, out_root, class_weights=None, class_counts=None):
             super().__init__()
             self.core = core
             self.num_classes = num_classes
             self.train_cfg = train_cfg
             self.out_root = out_root
+            self.imbalance_cfg = train_cfg.get("imbalance", {})
+            self.class_weights = class_weights
+            self.class_counts = class_counts or Counter()
 
             # 收集每个 batch 输出，用于 epoch 末汇总
             self.train_logits = []
@@ -81,6 +93,43 @@ def main(_cfg):
 
             # 本地 metrics.csv 路径
             self.metrics_csv_path = os.path.join(self.out_root, "metrics.csv")
+
+        def _get_class_priors(self, device):
+            if not self.class_counts:
+                return None
+            priors = torch.tensor(
+                [self.class_counts.get(i, 0) for i in range(self.num_classes)],
+                dtype=torch.float32,
+                device=device,
+            )
+            priors = priors / priors.sum().clamp_min(1.0)
+            return priors.clamp_min(1e-12)
+
+        def _compute_imbalance_loss(self, logits, targets):
+            # 默认沿用 core 内部 loss
+            mode = self.imbalance_cfg.get("loss", "core")
+            smoothing = float(self.imbalance_cfg.get("label_smoothing", 0.0))
+            class_weights = None
+            if self.class_weights is not None:
+                class_weights = self.class_weights.to(logits.device)
+
+            if mode == "weighted_ce":
+                return F.cross_entropy(
+                    logits,
+                    targets,
+                    weight=class_weights,
+                    label_smoothing=smoothing,
+                )
+
+            if mode == "logit_adjusted_ce":
+                tau = float(self.imbalance_cfg.get("logit_adjust_tau", 1.0))
+                priors = self._get_class_priors(logits.device)
+                if priors is None:
+                    return F.cross_entropy(logits, targets, label_smoothing=smoothing)
+                adjusted_logits = logits + tau * torch.log(priors).unsqueeze(0)
+                return F.cross_entropy(adjusted_logits, targets, label_smoothing=smoothing)
+
+            return None
 
         def forward(self, x):
             return self.core(x)
@@ -386,6 +435,10 @@ def main(_cfg):
             logits = out["logits"]
             targets = out["targets"]
 
+            imbalance_loss = self._compute_imbalance_loss(logits, targets)
+            if imbalance_loss is not None:
+                loss = imbalance_loss
+
             self.train_logits.append(logits.detach().cpu())
             self.train_targets.append(targets.detach().cpu())
 
@@ -551,7 +604,14 @@ def main(_cfg):
         num_sanity_val_steps=0,
     )
 
-    model = _Wrapper(core, num_classes, train_cfg_, out_root)
+    model = _Wrapper(
+        core,
+        num_classes,
+        train_cfg_,
+        out_root,
+        class_weights=dm.class_weights,
+        class_counts=class_counts,
+    )
     trainer.fit(model, datamodule=dm)
 
 
