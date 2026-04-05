@@ -23,12 +23,14 @@ cat > .gitignore << 'EOF'
 data/
 datasets/
 outputs/
+outputs*/
 logs/
 wandb/
 checkpoints/
 ckpt/
 weights/
 runs/
+runs_5fold*/ 
 results/
 cache/
 tmp/
