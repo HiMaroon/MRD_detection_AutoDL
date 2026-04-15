@@ -351,30 +351,30 @@ def main():
 
     best_ckpt = "/root/autodl-tmp/projects/myq/SingleCellProject/outputs/260323_gt2yolo_576_0.65_2class_onlineAug/epoch=23-val_acc_macro=0.0000.ckpt"
 
-    # --- TJMU ---
-    test_data_sir = "/root/autodl-tmp/projects/myq/SingleCellProject/dataset/singlecell_260323/test_TJMU_labels.txt"
-    res_dir = "/root/autodl-tmp/projects/myq/SingleCellProject/outputs_test/260323_gt2yolo_576_0.65_2class_onlineAug/test_TJMU/"
-    run_test_on_split(split="val", ckpt_path=best_ckpt, test_data_sir=test_data_sir, output_dir=res_dir)
-
     # --- BJH ---
-    test_data_sir = "/root/autodl-tmp/projects/myq/SingleCellProject/dataset/singlecell_260323/test_BJH_labels.txt"
-    res_dir = "/root/autodl-tmp/projects/myq/SingleCellProject/outputs_test/260323_gt2yolo_576_0.65_2class_onlineAug/test_BJH/"
+    test_data_sir = "/root/autodl-tmp/projects/myq/SingleCellProject/dataset/style_transfer_fda/test_BJH/beta_0p01_labels_16.txt"
+    res_dir = "/root/autodl-tmp/projects/myq/SingleCellProject/outputs_test/260323_transfer_fda_gt2yolo_576_0.65_2class_onlineAug/test_BJH/"
     run_test_on_split(split="val", ckpt_path=best_ckpt, test_data_sir=test_data_sir, output_dir=res_dir)
 
     # --- FXH_noALL ---
-    test_data_sir = "/root/autodl-tmp/projects/myq/SingleCellProject/dataset/singlecell_260323/test_FXH_noALL_labels.txt"
-    res_dir = "/root/autodl-tmp/projects/myq/SingleCellProject/outputs_test/260323_gt2yolo_576_0.65_2class_onlineAug/test_FXH_noALL/"
+    test_data_sir = "/root/autodl-tmp/projects/myq/SingleCellProject/dataset/style_transfer_fda/test_FXH_noALL/beta_0p01_labels_16.txt"
+    res_dir = "/root/autodl-tmp/projects/myq/SingleCellProject/outputs_test/260323_transfer_fda_gt2yolo_576_0.65_2class_onlineAug/test_FXH_noALL/"
     run_test_on_split(split="val", ckpt_path=best_ckpt, test_data_sir=test_data_sir, output_dir=res_dir)
 
-    # --- train ---
-    test_data_sir = "/root/autodl-tmp/projects/myq/SingleCellProject/dataset/singlecell_260323/train_labels.txt"
-    res_dir = "/root/autodl-tmp/projects/myq/SingleCellProject/outputs_test/260323_gt2yolo_576_0.65_2class_onlineAug/train/"
+    # --- TJMU ---
+    test_data_sir = "/root/autodl-tmp/projects/myq/SingleCellProject/dataset/style_transfer_fda/test_TJMU/beta_0p01_labels_16.txt"
+    res_dir = "/root/autodl-tmp/projects/myq/SingleCellProject/outputs_test/260323_transfer_fda_gt2yolo_576_0.65_2class_onlineAug/test_TJMU/"
     run_test_on_split(split="val", ckpt_path=best_ckpt, test_data_sir=test_data_sir, output_dir=res_dir)
 
-    # --- val ---
-    test_data_sir = "/root/autodl-tmp/projects/myq/SingleCellProject/dataset/singlecell_260323/val_labels.txt"
-    res_dir = "/root/autodl-tmp/projects/myq/SingleCellProject/outputs_test/260323_gt2yolo_576_0.65_2class_onlineAug/val/"
-    run_test_on_split(split="val", ckpt_path=best_ckpt, test_data_sir=test_data_sir, output_dir=res_dir)
+    # # --- train ---
+    # test_data_sir = "/root/autodl-tmp/projects/myq/SingleCellProject/dataset/singlecell_260323/train_labels.txt"
+    # res_dir = "/root/autodl-tmp/projects/myq/SingleCellProject/outputs_test/260323_gt2yolo_576_0.65_2class_onlineAug/train/"
+    # run_test_on_split(split="val", ckpt_path=best_ckpt, test_data_sir=test_data_sir, output_dir=res_dir)
+
+    # # --- val ---
+    # test_data_sir = "/root/autodl-tmp/projects/myq/SingleCellProject/dataset/singlecell_260323/val_labels.txt"
+    # res_dir = "/root/autodl-tmp/projects/myq/SingleCellProject/outputs_test/260323_gt2yolo_576_0.65_2class_onlineAug/val/"
+    # run_test_on_split(split="val", ckpt_path=best_ckpt, test_data_sir=test_data_sir, output_dir=res_dir)
 
 
 if __name__ == "__main__":

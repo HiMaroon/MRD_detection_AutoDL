@@ -1,6 +1,6 @@
-output_root: /root/autodl-tmp/projects/myq/SingleCellProject/outputs/260323_yolo2yolo_576_0.65_2class_onlineAug
+output_root: /root/autodl-tmp/projects/myq/SingleCellProject/outputs/260323_16class_logit_adjusted_ce_tau0
 batch_size: 512
-max_epochs: 30
+max_epochs: 50
 precision: 16-mixed
 devices: 1
 accumulate_grad_batches: 1
@@ -26,7 +26,7 @@ callbacks:
     filename: '{epoch:02d}-{val_f1_macro:.4f}'
     save_last: true
 imbalance:
-  use_class_weight_loss: true
-  loss: weighted_ce  # core | weighted_ce | logit_adjusted_ce
-  logit_adjust_tau: 1.0
+  use_class_weight_loss: False
+  loss: logit_adjusted_ce  # core | weighted_ce | logit_adjusted_ce
+  logit_adjust_tau: 0
   label_smoothing: 0.05

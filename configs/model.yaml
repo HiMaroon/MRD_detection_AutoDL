@@ -1,6 +1,8 @@
 arch: efficientnet_b0
 pretrained: false
-local_weight_path: /root/autodl-tmp/projects/myq/SingleCellProject/outputs/260323_576_0.65_2class_onlineAug/epoch=24-val_acc_macro=0.0000.ckpt #/root/autodl-tmp/projects/mwh/SingleCellProject/weights/pytorch_model.bin
+local_weight_path: /root/autodl-tmp/projects/myq/SingleCellProject/outputs/260323_wcore_19class_576_0.65_onlineAug/epoch=44-val_f1_macro=0.0000.ckpt 
+# /root/autodl-tmp/projects/myq/SingleCellProject/outputs/260323_576_0.65_2class_onlineAug/epoch=24-val_acc_macro=0.0000.ckpt 
+#/root/autodl-tmp/projects/mwh/SingleCellProject/weights/pytorch_model.bin
 drop: 0.3
 drop_path: 0.1
 freeze_backbone_epochs: 5
