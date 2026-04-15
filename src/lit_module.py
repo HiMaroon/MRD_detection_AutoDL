@@ -1,32 +1,10 @@
-#无预训练 13版 lit_module.py 完整版（已加 label smoothing to Focal，smoothing=0.1）
 import torch
 import torch.nn as nn
-import timm
-# 在 lit_module.py 顶部加入（替换掉你之前手写的那个 FocalLoss）
 import torch.nn.functional as F
+import timm
 
-# class FocalLoss(nn.Module):
-#     def __init__(self, alpha=1.5, gamma=2.0, reduction='mean'):
-#         super().__init__()
-#         self.alpha = alpha      # 正样本权重，稍后我们设 3~4
-#         self.gamma = gamma
-#         self.reduction = reduction
+from .augmentations import build_center_border_masks
 
-#     def forward(self, logits, targets):
-#         # logits: [B, 2], targets: [B] 长整型 0 或 1
-#         # 加 label smoothing
-#         targets_onehot = F.one_hot(targets, num_classes=2).float()
-#         targets_smooth = targets_onehot * (1 - 0.15) + 0.15 / 2
-#         ce_loss = F.cross_entropy(logits, targets_smooth, reduction='none')
-#         pt = torch.exp(-ce_loss)                       # pt = p_t
-#         focal_loss = self.alpha * (1 - pt) ** self.gamma * ce_loss
-
-#         if self.reduction == 'mean':
-#             return focal_loss.mean()
-#         elif self.reduction == 'sum':
-#             return focal_loss.sum()
-#         else:
-#             return focal_loss
 
 class FocalLoss(nn.Module):
     def __init__(self, alpha=None, gamma=2.0, reduction='mean', num_classes=2, smoothing=0.1):
@@ -35,14 +13,12 @@ class FocalLoss(nn.Module):
         self.reduction = reduction
         self.num_classes = num_classes
         self.smoothing = smoothing
-        
-        # 统一处理alpha为tensor
+
         if alpha is None:
             self.alpha = None
         elif isinstance(alpha, (list, tuple, torch.Tensor)):
             self.alpha = torch.tensor(alpha, dtype=torch.float)
         elif isinstance(alpha, (int, float)):
-            # 单个值 → 所有类别等权重
             self.alpha = torch.ones(num_classes, dtype=torch.float) * alpha
         else:
             raise TypeError(f"Unsupported alpha type: {type(alpha)}")
@@ -50,243 +26,220 @@ class FocalLoss(nn.Module):
     def forward(self, logits, targets):
         probs = F.softmax(logits, dim=1)
         targets_onehot = F.one_hot(targets, num_classes=self.num_classes).float()
-        
-        # 标签平滑
+
         if self.smoothing > 0:
             targets_smooth = targets_onehot * (1 - self.smoothing) + self.smoothing / self.num_classes
         else:
             targets_smooth = targets_onehot
-        
-        # 获取正确类别的概率 pt
-        pt = (probs * targets_onehot).sum(dim=1).clamp(min=1e-7, max=1-1e-7)
-        
-        # 计算交叉熵
+
+        pt = (probs * targets_onehot).sum(dim=1).clamp(min=1e-7, max=1 - 1e-7)
         ce_loss = -torch.sum(targets_smooth * torch.log(probs + 1e-7), dim=1)
-        
-        # 应用alpha权重
+
         if self.alpha is not None:
-            # 确保alpha是tensor并移到正确设备
             alpha_t = self.alpha.to(logits.device)[targets]
         else:
             alpha_t = 1.0
-        
-        # Focal Loss
-        focal_weight = (1 - pt) ** self.gamma
-        loss = alpha_t * focal_weight * ce_loss
-        
+
+        loss = alpha_t * ((1 - pt) ** self.gamma) * ce_loss
         if self.reduction == 'mean':
             return loss.mean()
-        elif self.reduction == 'sum':
+        if self.reduction == 'sum':
             return loss.sum()
-        else:
-            return loss
+        return loss
 
-from torchmetrics.functional.classification import (
-    binary_accuracy,
-    binary_precision,
-    binary_recall,
-    binary_f1_score,
-    binary_auroc,
-)
+
+class MixStyle(nn.Module):
+    def __init__(self, p=0.5, alpha=0.1, eps=1e-6):
+        super().__init__()
+        self.p = p
+        self.alpha = alpha
+        self.eps = eps
+
+    def forward(self, x):
+        if not self.training or torch.rand(1).item() > self.p:
+            return x
+
+        b = x.size(0)
+        mu = x.mean(dim=[2, 3], keepdim=True)
+        sig = (x.var(dim=[2, 3], keepdim=True) + self.eps).sqrt()
+        x_norm = (x - mu) / sig
+
+        perm = torch.randperm(b, device=x.device)
+        mu2, sig2 = mu[perm], sig[perm]
+        lam = torch.distributions.Beta(self.alpha, self.alpha).sample((b, 1, 1, 1)).to(x.device)
+        mu_mix = lam * mu + (1 - lam) * mu2
+        sig_mix = lam * sig + (1 - lam) * sig2
+        return x_norm * sig_mix + mu_mix
+
+
+class ImageEncoder(nn.Module):
+    def __init__(self, arch: str, pretrained: bool, drop: float, drop_path: float):
+        super().__init__()
+        self.backbone = timm.create_model(
+            arch,
+            pretrained=pretrained,
+            num_classes=0,
+            global_pool="avg",
+            drop_rate=drop,
+            drop_path_rate=drop_path,
+            in_chans=3,
+        )
+        self.num_features = getattr(self.backbone, "num_features", 1280)
+
+    def forward(self, x):
+        return self.backbone(x)
+
+
+class HEBranch(nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.net = nn.Sequential(
+            nn.Conv2d(2, 16, 3, padding=1),
+            nn.ReLU(inplace=True),
+            nn.Conv2d(16, 32, 3, padding=1),
+            nn.ReLU(inplace=True),
+            nn.AdaptiveAvgPool2d(1),
+            nn.Flatten(),
+        )
+        self.out_dim = 32
+
+    def forward(self, he):
+        return self.net(he)
+
+
+class SizeMLP(nn.Module):
+    def __init__(self, in_dim=5, hidden=32, out_dim=32):
+        super().__init__()
+        self.net = nn.Sequential(
+            nn.Linear(in_dim, hidden),
+            nn.ReLU(inplace=True),
+            nn.Dropout(0.1),
+            nn.Linear(hidden, out_dim),
+            nn.ReLU(inplace=True),
+        )
+        self.out_dim = out_dim
+
+    def forward(self, x):
+        return self.net(x)
+
 
 class LitSingleCell(nn.Module):
-    def __init__(self, cfg_model, num_classes, class_weights=None):
+    def __init__(self, cfg_model, num_classes, class_weights=None, data_advanced_cfg=None):
         super().__init__()
-
         self.cfg_model = cfg_model
         self.num_classes = num_classes
+        self.advanced_cfg = data_advanced_cfg or {}
 
-        # 创建模型
-        self.model = timm.create_model(
-            cfg_model["arch"],
-            pretrained=cfg_model.get("pretrained", True),
-            num_classes=num_classes,
-            drop_rate=cfg_model.get("drop", 0.0),
-            drop_path_rate=cfg_model.get("drop_path", 0.0),
-        )
+        arch = cfg_model["arch"]
+        pretrained = cfg_model.get("pretrained", True)
+        drop = cfg_model.get("drop", 0.0)
+        drop_path = cfg_model.get("drop_path", 0.0)
 
-        # 加载本地预训练权重
+        self.image_encoder = ImageEncoder(arch, pretrained, drop, drop_path)
+        self.mixstyle = MixStyle(p=cfg_model.get("mixstyle_prob", 0.0), alpha=cfg_model.get("mixstyle_alpha", 0.1))
+
+        self.use_size_branch = bool(self.advanced_cfg.get("use_size_branch", False))
+        self.use_dual_scale = bool(self.advanced_cfg.get("use_dual_scale", False))
+        self.use_he_branch = bool(self.advanced_cfg.get("use_he_branch", False))
+
+        size_in_dim = int(self.advanced_cfg.get("size_feature_dim", 5))
+        self.size_branch = SizeMLP(in_dim=size_in_dim) if self.use_size_branch else None
+        self.he_branch = HEBranch() if self.use_he_branch else None
+
+        fusion_dim = self.image_encoder.num_features
+        if self.use_dual_scale:
+            fusion_dim += self.image_encoder.num_features
+        if self.use_size_branch:
+            fusion_dim += self.size_branch.out_dim
+        if self.use_he_branch:
+            fusion_dim += self.he_branch.out_dim
+
+        self.classifier = nn.Linear(fusion_dim, num_classes)
+
         local_weight_path = cfg_model.get("local_weight_path", None)
         if local_weight_path:
-            # state_dict = torch.load(local_weight_path, map_location="cpu")
-            # state_dict.pop("classifier.weight", None)
-            # state_dict.pop("classifier.bias", None)
-            # state_dict.pop("fc.weight", None)
-            # state_dict.pop("fc.bias", None)
-            # state_dict.pop("head.weight", None)
-            # state_dict.pop("head.bias", None)
-            # msg = self.model.load_state_dict(state_dict, strict=False)
-            
             raw = torch.load(local_weight_path, map_location="cpu")
             state_dict = raw["state_dict"] if isinstance(raw, dict) and "state_dict" in raw else raw
-
             clean_state = {}
             for k, v in state_dict.items():
-                if k.startswith("core.model."):
-                    nk = k[len("core.model."):]
-                elif k.startswith("model."):
-                    nk = k[len("model."):]
+                if k.startswith("core."):
+                    clean_state[k[len("core."):]] = v
                 else:
-                    nk = k
-                clean_state[nk] = v
+                    clean_state[k] = v
+            self.load_state_dict(clean_state, strict=False)
 
-            for head_k in ["classifier.weight","classifier.bias","fc.weight","fc.bias","head.weight","head.bias"]:
-                clean_state.pop(head_k, None)
-
-            msg = self.model.load_state_dict(clean_state, strict=False)
-            
-            print(f"[Load Weights] {local_weight_path}")
-            print("Missing keys:", len(msg.missing_keys))
-            print("Unexpected keys:", len(msg.unexpected_keys))
-
-        # Loss function
         if class_weights is not None:
             self.criterion = nn.CrossEntropyLoss(weight=class_weights)
         else:
             self.criterion = FocalLoss(alpha=1.5, gamma=2.0, num_classes=num_classes)
 
-        # Freeze backbone
         self.freeze_backbone_epochs = cfg_model.get("freeze_backbone_epochs", 0)
         self._frozen = False
 
     def maybe_freeze_backbone(self, current_epoch: int):
         if self.freeze_backbone_epochs <= 0:
             return
-
         if current_epoch < self.freeze_backbone_epochs and not self._frozen:
-            for n, p in self.model.named_parameters():
-                if "classifier" not in n and "fc" not in n and "head" not in n:
-                    p.requires_grad = False
+            for p in self.image_encoder.parameters():
+                p.requires_grad = False
             self._frozen = True
-            print(f"[Epoch {current_epoch}] Backbone frozen")
-
         if current_epoch >= self.freeze_backbone_epochs and self._frozen:
-            for p in self.model.parameters():
+            for p in self.image_encoder.parameters():
                 p.requires_grad = True
             self._frozen = False
-            print(f"[Epoch {current_epoch}] Backbone unfrozen")
 
-    def forward(self, x):
-        return self.model(x)
+    def _extract_inputs(self, batch):
+        if isinstance(batch, torch.Tensor):
+            return {"image": batch}
+        if isinstance(batch, (list, tuple)):
+            x, y = batch
+            return {"image": x, "target": y}
+        return batch
+
+    def forward(self, batch):
+        b = self._extract_inputs(batch)
+        img_feat = self.image_encoder(self.mixstyle(b["image"]))
+        feats = [img_feat]
+
+        if self.use_dual_scale and "image_context" in b:
+            ctx_feat = self.image_encoder(self.mixstyle(b["image_context"]))
+            feats.append(ctx_feat)
+
+        if self.use_size_branch and "size_features" in b:
+            feats.append(self.size_branch(b["size_features"]))
+
+        if self.use_he_branch and isinstance(b.get("he"), dict):
+            he = torch.stack([b["he"]["H"], b["he"]["E"]], dim=1)
+            feats.append(self.he_branch(he))
+
+        fused = torch.cat(feats, dim=1)
+        logits = self.classifier(fused)
+        return logits
+
+    def estimate_attention_map(self, batch):
+        b = self._extract_inputs(batch)
+        x = b["image"]
+        attn = x.abs().mean(dim=1)
+        attn = (attn - attn.amin(dim=(1, 2), keepdim=True)) / (attn.amax(dim=(1, 2), keepdim=True) - attn.amin(dim=(1, 2), keepdim=True) + 1e-6)
+        return attn
+
+    def border_attention_regularization(self, batch, lambda_border=0.0, lambda_center=0.0, border_ratio=0.15):
+        attn = self.estimate_attention_map(batch)
+        h, w = attn.shape[-2:]
+        border, center = build_center_border_masks(h, w, border_ratio=border_ratio, device=attn.device)
+        border_term = (attn * border).mean()
+        center_term = (attn * center).mean()
+        return lambda_border * border_term - lambda_center * center_term
 
     def _step(self, batch, stage: str):
-        """
-        返回: dict 包含 loss, logits, targets 用于上层计算多分类指标
-        """
-        x, y = batch  # y: [B], 类别索引 0,1,2,...,num_classes-1
-
-        logits = self(x)  # [B, num_classes]
-        loss = self.criterion(logits, y)
-
-        x, y = batch
-        logits = self.model(x)
-        
-
-        # 返回必要信息，让 Wrapper 计算多分类指标
-        return {
-            "loss": loss,
-            "logits": logits,
-            "targets": y,
-        }
+        b = self._extract_inputs(batch)
+        targets = b["target"]
+        logits = self(batch)
+        loss = self.criterion(logits, targets)
+        return {"loss": loss, "logits": logits, "targets": targets}
 
     def training_step(self, batch):
         return self._step(batch, "train")
 
     def validation_step(self, batch):
         return self._step(batch, "val")
-
-
-# class LitSingleCell(nn.Module):
-#     def __init__(self, cfg_model, num_classes, class_weights=None):
-#         super().__init__()
-
-#         self.cfg_model = cfg_model
-#         self.num_classes = num_classes
-
-#         # 创建模型（pretrained 可由 config 控制）
-#         self.model = timm.create_model(
-#             cfg_model["arch"],
-#             pretrained=cfg_model.get("pretrained", True),
-#             num_classes=num_classes,
-#             drop_rate=cfg_model.get("drop", 0.0),
-#             drop_path_rate=cfg_model.get("drop_path", 0.0),
-#         )
-
-#         # ====== 加载本地预训练权重（并打印加载情况）======
-#         local_weight_path = cfg_model.get("local_weight_path", None)
-#         if local_weight_path:
-#             state_dict = torch.load(local_weight_path, map_location="cpu")
-
-#             # 兼容旧 head（如果有的话）
-#             state_dict.pop("classifier.weight", None)
-#             state_dict.pop("classifier.bias", None)
-#             state_dict.pop("fc.weight", None)
-#             state_dict.pop("fc.bias", None)
-#             state_dict.pop("head.weight", None)
-#             state_dict.pop("head.bias", None)
-
-#             msg = self.model.load_state_dict(state_dict, strict=False)
-#             print(f"[Load Weights] {local_weight_path}")
-#             print("Missing keys:", len(msg.missing_keys))
-#             print("Unexpected keys:", len(msg.unexpected_keys))
-#             # 想看具体 key 就取消下面两行注释
-#             # print("Missing keys list:", msg.missing_keys)
-#             # print("Unexpected keys list:", msg.unexpected_keys)
-
-#         # loss 采用Focalloss
-#         self.criterion = FocalLoss(alpha=1.5, gamma=2.0)
-#         #改回原来的loss
-#         #self.criterion = nn.CrossEntropyLoss(weight=torch.tensor([1.0, 2.0]).to('cuda'))
-
-#         # freeze 相关
-#         self.freeze_backbone_epochs = cfg_model.get("freeze_backbone_epochs", 0)
-#         self._frozen = False
-
-#     def maybe_freeze_backbone(self, current_epoch: int):
-#         if self.freeze_backbone_epochs <= 0:
-#             return
-
-#         if current_epoch < self.freeze_backbone_epochs and not self._frozen:
-#             for n, p in self.model.named_parameters():
-#                 if "classifier" not in n and "fc" not in n and "head" not in n:
-#                     p.requires_grad = False
-#             self._frozen = True
-
-#         if current_epoch >= self.freeze_backbone_epochs and self._frozen:
-#             for p in self.model.parameters():
-#                 p.requires_grad = True
-#             self._frozen = False
-
-#     def forward(self, x):
-#         return self.model(x)
-
-#     def _step(self, batch, stage: str):
-#         x, y = batch  # y: [B], 0/1
-
-#         logits = self(x)
-#         loss = self.criterion(logits, y)
-
-#         probs = torch.softmax(logits, dim=1)[:, 1]
-#         preds = (probs >= 0.4).long()
-
-#         acc = binary_accuracy(preds, y)
-#         prec = binary_precision(preds, y)
-#         rec = binary_recall(preds, y)
-#         f1 = binary_f1_score(preds, y)
-#         auroc = binary_auroc(probs, y)
-
-#         metrics = {
-#             f"{stage}/loss": loss.detach(),
-#             f"{stage}/acc": acc.detach(),
-#             f"{stage}/prec": prec.detach(),
-#             f"{stage}/rec": rec.detach(),
-#             f"{stage}/f1": f1.detach(),
-#             f"{stage}/auroc": auroc.detach(),
-#         }
-#         return loss, metrics
-
-#     def training_step(self, batch):
-#         return self._step(batch, "train")
-
-#     def validation_step(self, batch):
-#         return self._step(batch, "val")

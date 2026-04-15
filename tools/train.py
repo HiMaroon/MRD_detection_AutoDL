@@ -50,7 +50,7 @@ def main(_cfg):
 
     device = "cuda" if torch.cuda.is_available() else "cpu"
     num_classes = data_cfg_["num_classes"]
-    class_counts = Counter([y for _, y in dm.train_ds.samples]) if dm.train_ds is not None else Counter()
+    class_counts = Counter([s.label for s in dm.train_ds.samples]) if dm.train_ds is not None else Counter()
     print(f"[Data] train class_counts: {dict(class_counts)}")
 
     imbalance_cfg = train_cfg_.get("imbalance", {})
@@ -61,6 +61,7 @@ def main(_cfg):
         model_cfg_,
         num_classes=num_classes,
         class_weights=model_class_weights,
+        data_advanced_cfg=data_cfg_.get("advanced", {}),
     )
 
     # ====== Freeze backbone 回调 ======
@@ -418,6 +419,17 @@ def main(_cfg):
             if imbalance_loss is not None:
                 loss = imbalance_loss
 
+            reg_cfg = self.train_cfg.get("attention_regularization", {})
+            if reg_cfg.get("use_border_attention_reg", False):
+                reg_loss = self.core.border_attention_regularization(
+                    batch,
+                    lambda_border=float(reg_cfg.get("lambda_border", 0.0)),
+                    lambda_center=float(reg_cfg.get("lambda_center", 0.0)),
+                    border_ratio=float(reg_cfg.get("border_ratio", 0.15)),
+                )
+                loss = loss + reg_loss
+                self.log("train/loss_border_reg", reg_loss, prog_bar=False, on_step=False, on_epoch=True, logger=True)
+
             self.train_logits.append(logits.detach().cpu())
             self.train_targets.append(targets.detach().cpu())
 
@@ -650,7 +662,7 @@ if __name__ == "__main__":
 
 #     device = "cuda" if torch.cuda.is_available() else "cpu"
 #     num_classes = data_cfg_["num_classes"]
-#     class_counts = Counter([y for _, y in dm.train_ds.samples]) if dm.train_ds is not None else Counter()
+#     class_counts = Counter([s.label for s in dm.train_ds.samples]) if dm.train_ds is not None else Counter()
 #     print(f"[Data] train class_counts: {dict(class_counts)}")
 
 #     imbalance_cfg = train_cfg_.get("imbalance", {})
