@@ -1,0 +1,15 @@
+# baseline: legacy-like configuration
+advanced:
+  input_mode: image_only
+  center_weight_mode: none
+  border_aug_prob: 0.0
+  use_size_branch: false
+  use_dual_scale: false
+  use_stain_normalization: false
+  use_he_channels: false
+  use_he_branch: false
+model:
+  mixstyle_prob: 0.0
+train:
+  attention_regularization:
+    use_border_attention_reg: false

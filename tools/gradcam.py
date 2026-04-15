@@ -19,6 +19,7 @@ if project_root not in sys.path:
     sys.path.append(project_root)
 
 from src.lit_module import LitSingleCell
+from src.augmentations import CenterWeightTransform, BorderSuppressionAugment, MacenkoNormalizer, HEDeconvolution
 from configs import data_cfg, model_cfg
 
 
@@ -201,6 +202,42 @@ def save_vis_triplet(original, heatmap, overlay, out_path: Path):
     plt.close(fig)
 
 
+
+
+def save_intermediate_results(pil_img: Image.Image, out_dir: Path):
+    adv = data_cfg.get("advanced", {})
+    t = T.Compose([T.Resize((data_cfg["img_size"], data_cfg["img_size"])), T.ToTensor()])
+    x = t(pil_img)
+
+    center_t = CenterWeightTransform(
+        mode=adv.get("center_weight_mode", "none"),
+        strength=float(adv.get("center_weight_strength", 0.0)),
+        sigma=float(adv.get("center_weight_sigma", 0.45)),
+    )
+    border_t = BorderSuppressionAugment(
+        prob=1.0,
+        width_ratio=float(adv.get("border_aug_width_ratio", 0.12)),
+        mode=adv.get("border_aug_mode", "blur"),
+    )
+    stain_t = MacenkoNormalizer(enabled=bool(adv.get("use_stain_normalization", False)))
+    he_t = HEDeconvolution(enabled=True, output_mode="analysis")
+
+    center_img = center_t(x.clone()).clamp(0, 1)
+    border_img = border_t(x.clone()).clamp(0, 1)
+    stain_img = stain_t(x.clone()).clamp(0, 1)
+    _, he_info = he_t(x.clone())
+
+    out_dir.mkdir(parents=True, exist_ok=True)
+    TF.to_pil_image(center_img[:3]).save(out_dir / "center_weight.png")
+    TF.to_pil_image(border_img[:3]).save(out_dir / "border_suppression.png")
+    TF.to_pil_image(stain_img[:3]).save(out_dir / "stain_normalized.png")
+
+    if he_info is not None:
+        h = (he_info["H"] - he_info["H"].min()) / (he_info["H"].max() - he_info["H"].min() + 1e-8)
+        e = (he_info["E"] - he_info["E"].min()) / (he_info["E"].max() - he_info["E"].min() + 1e-8)
+        TF.to_pil_image(h).save(out_dir / "he_H_channel.png")
+        TF.to_pil_image(e).save(out_dir / "he_E_channel.png")
+
 def run_gradcam_for_one_label_file(
     model: nn.Module,
     checkpoint_path: Path,
@@ -223,12 +260,14 @@ def run_gradcam_for_one_label_file(
     heat_dir = out_dir / "heatmaps"
     heat_dir.mkdir(parents=True, exist_ok=True)
 
-    for img_path, true_label in tqdm(samples, desc=f"Grad-CAM ({label_file.stem})", ncols=100):
+    for i, (img_path, true_label) in enumerate(tqdm(samples, desc=f"Grad-CAM ({label_file.stem})", ncols=100)):
         if not img_path.exists():
             print(f"[WARN] 图片不存在，跳过: {img_path}")
             continue
 
         pil = Image.open(img_path).convert("RGB")
+        if i == 0:
+            save_intermediate_results(pil, out_dir / "intermediates")
         x = transform(pil).unsqueeze(0).to(next(model.parameters()).device)
         cam, logits = gradcam(x, class_idx=class_idx)
 
@@ -313,6 +352,7 @@ def main():
     parser.add_argument("--max-samples", type=int, default=0, help="最多处理样本数，0 表示全部")
     parser.add_argument("--cam-threshold", type=float, default=0.6, help="统计边缘关注度时，高响应阈值")
     parser.add_argument("--border-ratio", type=float, default=0.15, help="统计边缘关注度时，边缘宽度占比")
+    parser.add_argument("--baseline-ckpt", type=str, default=None, help="可选：用于对比的 baseline checkpoint")
     args = parser.parse_args()
 
     ckpt_path = Path(args.ckpt)
@@ -329,7 +369,7 @@ def main():
 
     # 1) 加载模型
     num_classes = data_cfg["num_classes"]
-    core = LitSingleCell(model_cfg, num_classes=num_classes)
+    core = LitSingleCell(model_cfg, num_classes=num_classes, data_advanced_cfg=data_cfg.get("advanced", {}))
     wrapper = _Wrapper.load_from_checkpoint(str(ckpt_path), core=core, map_location="cpu")
     model = wrapper.core.to(device)
     model.eval()
@@ -375,6 +415,36 @@ def main():
         json.dump(all_summaries, f, ensure_ascii=False, indent=2)
     print(f"\n✅ 全部完成，总结文件: {out_root_dir / 'summary_all_datasets.json'}")
 
+
+
+    if args.baseline_ckpt:
+        baseline_core = LitSingleCell(model_cfg, num_classes=data_cfg["num_classes"], data_advanced_cfg=data_cfg.get("advanced", {}))
+        baseline_wrapper = _Wrapper(baseline_core)
+        baseline_sd = torch.load(args.baseline_ckpt, map_location="cpu")
+        baseline_wrapper.load_state_dict(baseline_sd["state_dict"] if "state_dict" in baseline_sd else baseline_sd, strict=False)
+        baseline_model = baseline_wrapper.core.eval().to(device)
+
+        bsum, _ = run_gradcam_for_one_label_file(
+            model=baseline_model,
+            checkpoint_path=Path(args.baseline_ckpt),
+            label_file=label_files[0],
+            out_dir=out_root_dir / "baseline_compare",
+            target_name=target_name,
+            target_layer=target_layer,
+            class_idx=args.class_idx,
+            max_samples=args.max_samples,
+            cam_threshold=args.cam_threshold,
+            border_ratio=args.border_ratio,
+        )
+        compare = {
+            "new_mean_border_focus_ratio": all_summaries[0].get("mean_border_focus_ratio") if all_summaries else None,
+            "baseline_mean_border_focus_ratio": bsum.get("mean_border_focus_ratio"),
+            "delta": None,
+        }
+        if compare["new_mean_border_focus_ratio"] is not None and compare["baseline_mean_border_focus_ratio"] is not None:
+            compare["delta"] = compare["new_mean_border_focus_ratio"] - compare["baseline_mean_border_focus_ratio"]
+        with open(out_root_dir / "compare_summary.json", "w", encoding="utf-8") as f:
+            json.dump(compare, f, ensure_ascii=False, indent=2)
 
 if __name__ == "__main__":
     main()

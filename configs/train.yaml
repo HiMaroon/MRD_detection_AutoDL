@@ -6,13 +6,16 @@ devices: 1
 accumulate_grad_batches: 1
 seed: 42
 use_wandb: true
+
 optimizer:
   name: adamw
   lr: 5e-5
   weight_decay: 1e-3
+
 scheduler:
   name: cosine
   warmup_epochs: 5
+
 callbacks:
   early_stopping:
     monitor: val/f1_macro
@@ -25,8 +28,15 @@ callbacks:
     save_top_k: 3
     filename: '{epoch:02d}-{val_f1_macro:.4f}'
     save_last: true
+
 imbalance:
-  use_class_weight_loss: False
-  loss: logit_adjusted_ce  # core | weighted_ce | logit_adjusted_ce
+  use_class_weight_loss: false
+  loss: logit_adjusted_ce
   logit_adjust_tau: 0
   label_smoothing: 0.05
+
+attention_regularization:
+  use_border_attention_reg: false
+  lambda_border: 0.05
+  lambda_center: 0.02
+  border_ratio: 0.15
