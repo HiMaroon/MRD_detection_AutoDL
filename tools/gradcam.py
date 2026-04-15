@@ -378,3 +378,25 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+'''
+python tools/gradcam.py \
+  --ckpt "/root/autodl-tmp/projects/myq/SingleCellProject/outputs/260323_gt2yolo_576_0.65_2class_onlineAug/epoch=23-val_acc_macro=0.0000.ckpt" \
+  --label-file "/root/autodl-tmp/projects/myq/SingleCellProject/dataset/singlecell_260323/test_TJMU_labels_16.txt" \
+  --out-dir "/root/autodl-tmp/projects/myq/SingleCellProject/outputs_gradcam/debug_layers" \
+  --list-conv-layers
+'''
+
+'''
+python tools/gradcam.py \
+  --ckpt "/root/autodl-tmp/projects/myq/SingleCellProject/outputs/260323_gt2yolo_576_0.65_2class_onlineAug/epoch=23-val_acc_macro=0.0000.ckpt" \
+  --label-file \
+    "/root/autodl-tmp/projects/myq/SingleCellProject/dataset/singlecell_260323/test_TJMU_labels_16.txt" \
+    "/root/autodl-tmp/projects/myq/SingleCellProject/dataset/singlecell_260323/test_BJH_labels_16.txt" \
+    "/root/autodl-tmp/projects/myq/SingleCellProject/dataset/singlecell_260323/test_FXH_noALL_labels_16.txt" \
+  --out-dir "/root/autodl-tmp/projects/myq/SingleCellProject/outputs_gradcam/batch_debug" \
+  --target-layer "model.conv_head" \
+  --cam-threshold 0.6 \
+  --border-ratio 0.15 \
+  --max-samples 100
+'''
