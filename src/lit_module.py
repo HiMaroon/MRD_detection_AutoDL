@@ -90,39 +90,6 @@ class ImageEncoder(nn.Module):
         return self.backbone(x)
 
 
-class HEBranch(nn.Module):
-    def __init__(self):
-        super().__init__()
-        self.net = nn.Sequential(
-            nn.Conv2d(2, 16, 3, padding=1),
-            nn.ReLU(inplace=True),
-            nn.Conv2d(16, 32, 3, padding=1),
-            nn.ReLU(inplace=True),
-            nn.AdaptiveAvgPool2d(1),
-            nn.Flatten(),
-        )
-        self.out_dim = 32
-
-    def forward(self, he):
-        return self.net(he)
-
-
-class SizeMLP(nn.Module):
-    def __init__(self, in_dim=5, hidden=32, out_dim=32):
-        super().__init__()
-        self.net = nn.Sequential(
-            nn.Linear(in_dim, hidden),
-            nn.ReLU(inplace=True),
-            nn.Dropout(0.1),
-            nn.Linear(hidden, out_dim),
-            nn.ReLU(inplace=True),
-        )
-        self.out_dim = out_dim
-
-    def forward(self, x):
-        return self.net(x)
-
-
 class LitSingleCell(nn.Module):
     def __init__(self, cfg_model, num_classes, class_weights=None, data_advanced_cfg=None):
         super().__init__()
@@ -145,21 +112,7 @@ class LitSingleCell(nn.Module):
             alpha=cfg_model.get("mixstyle_alpha", 0.1),
         )
 
-        self.use_size_branch = bool(self.advanced_cfg.get("use_size_branch", False))
-        self.use_dual_scale = bool(self.advanced_cfg.get("use_dual_scale", False))
-        self.use_he_branch = bool(self.advanced_cfg.get("use_he_branch", False))
-
-        size_in_dim = int(self.advanced_cfg.get("size_feature_dim", 5))
-        self.size_branch = SizeMLP(in_dim=size_in_dim) if self.use_size_branch else None
-        self.he_branch = HEBranch() if self.use_he_branch else None
-
         fusion_dim = self.image_encoder.num_features
-        if self.use_dual_scale:
-            fusion_dim += self.image_encoder.num_features
-        if self.use_size_branch:
-            fusion_dim += self.size_branch.out_dim
-        if self.use_he_branch:
-            fusion_dim += self.he_branch.out_dim
 
         # New task-specific classifier head.
         self.classifier = nn.Linear(fusion_dim, num_classes)
@@ -237,21 +190,7 @@ class LitSingleCell(nn.Module):
     def forward(self, batch):
         b = self._extract_inputs(batch)
         img_feat = self.image_encoder(self.mixstyle(b["image"]))
-        feats = [img_feat]
-
-        if self.use_dual_scale and "image_context" in b:
-            ctx_feat = self.image_encoder(self.mixstyle(b["image_context"]))
-            feats.append(ctx_feat)
-
-        if self.use_size_branch and "size_features" in b:
-            feats.append(self.size_branch(b["size_features"]))
-
-        if self.use_he_branch and isinstance(b.get("he"), dict):
-            he = torch.stack([b["he"]["H"], b["he"]["E"]], dim=1)
-            feats.append(self.he_branch(he))
-
-        fused = torch.cat(feats, dim=1)
-        logits = self.classifier(fused)
+        logits = self.classifier(img_feat)
         return logits
 
     def estimate_attention_map(self, batch):

@@ -42,12 +42,9 @@ def clean_data_top_level_duplicates(data_cfg: dict):
     这些键应只存在于 data.yaml 的 advanced 下，不应出现在顶层。
     """
     dup_keys = [
-        "input_mode", "bbox_csv",
+        "input_mode",
         "center_weight_mode", "center_weight_strength", "center_weight_sigma",
         "border_aug_prob", "border_aug_width_ratio", "border_aug_mode",
-        "roi_expand_ratio", "context_expand_ratio",
-        "use_size_branch", "size_feature_dim", "use_dual_scale",
-        "use_stain_normalization", "use_he_channels", "he_output_mode", "use_he_branch",
     ]
     removed = []
     for k in dup_keys:

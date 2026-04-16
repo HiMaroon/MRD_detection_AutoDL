@@ -1,13 +1,16 @@
-# baseline: legacy-like configuration
+# baseline
 advanced:
+  # only image_only is supported
   input_mode: image_only
-  center_weight_mode: none
-  border_aug_prob: 0.0
-  use_size_branch: false
-  use_dual_scale: false
-  use_stain_normalization: false
-  use_he_channels: false
-  use_he_branch: false
+
+  # A: center prior / border suppression
+  center_weight_mode: none # none | gaussian | elliptical
+  center_weight_strength: 0.35
+  center_weight_sigma: 0.45
+
+  border_aug_prob: 0
+  border_aug_width_ratio: 0.12
+  border_aug_mode: low_contrast # blur | low_contrast | random_mask | mean_color
 model:
   mixstyle_prob: 0.0
 train:
