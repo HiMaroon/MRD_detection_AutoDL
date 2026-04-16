@@ -2,8 +2,6 @@ import argparse
 from pathlib import Path
 import sys
 import json
-import csv
-import math
 
 import numpy as np
 import pandas as pd
@@ -22,7 +20,7 @@ if project_root not in sys.path:
     sys.path.append(project_root)
 
 from src.lit_module import LitSingleCell
-from src.augmentations import CenterWeightTransform, BorderSuppressionAugment, MacenkoNormalizer, HEDeconvolution
+from src.augmentations import CenterWeightTransform, BorderSuppressionAugment
 from configs import data_cfg, model_cfg
 
 
@@ -106,48 +104,6 @@ def parse_label_file(label_file: Path):
     return samples
 
 
-def load_bbox_mapping_from_cfg():
-    bbox_csv = data_cfg.get("advanced", {}).get("bbox_csv", "")
-    if not bbox_csv:
-        return {}
-    p = Path(bbox_csv)
-    if not p.exists():
-        print(f"[WARN] bbox_csv not found: {p}")
-        return {}
-    mp = {}
-    with open(p, "r", encoding="utf-8") as f:
-        reader = csv.DictReader(f)
-        for row in reader:
-            try:
-                mpp = float(row["mpp"]) if row.get("mpp") not in ("", None) else None
-                mp[Path(row["image_path"])] = (
-                    float(row["x1"]),
-                    float(row["y1"]),
-                    float(row["x2"]),
-                    float(row["y2"]),
-                    mpp,
-                )
-            except Exception:
-                continue
-    return mp
-
-
-def build_size_features_from_bbox(bbox_row):
-    x1, y1, x2, y2, mpp = bbox_row
-    w = max(1.0, x2 - x1)
-    h = max(1.0, y2 - y1)
-    area = w * h
-    ar = w / h
-    eqd = math.sqrt(4.0 * area / math.pi)
-    feats = [w, h, area, ar, eqd]
-    if mpp is not None and mpp > 0:
-        feats.extend([w * mpp, h * mpp, area * mpp * mpp, eqd * mpp])
-    feats = np.array(feats, dtype=np.float32)
-    skew_idx = np.array([0, 1, 2, 4] + ([5, 6, 7, 8] if len(feats) > 5 else []))
-    feats[skew_idx] = np.log1p(feats[skew_idx])
-    return torch.tensor(feats, dtype=torch.float32)
-
-
 def build_transform(img_size, mean, std):
     return T.Compose([
         T.Resize((img_size, img_size)),
@@ -158,15 +114,12 @@ def build_transform(img_size, mean, std):
 def apply_eval_like_postprocess(x: torch.Tensor) -> torch.Tensor:
     """Mimic validation-time image postprocess used by dataset for fair Grad-CAM inputs."""
     adv = data_cfg.get("advanced", {})
-    stain_t = MacenkoNormalizer(enabled=bool(adv.get("use_stain_normalization", False)))
     center_t = CenterWeightTransform(
         mode=adv.get("center_weight_mode", "none"),
         strength=float(adv.get("center_weight_strength", 0.0)),
         sigma=float(adv.get("center_weight_sigma", 0.45)),
     )
-    out = stain_t(x)
-    out = center_t(out)
-    return out
+    return center_t(x)
 
 
 def apply_normalize(x: torch.Tensor) -> torch.Tensor:
@@ -281,24 +234,12 @@ def save_intermediate_results(pil_img: Image.Image, out_dir: Path):
         width_ratio=float(adv.get("border_aug_width_ratio", 0.12)),
         mode=adv.get("border_aug_mode", "blur"),
     )
-    stain_t = MacenkoNormalizer(enabled=bool(adv.get("use_stain_normalization", False)))
-    he_t = HEDeconvolution(enabled=True, output_mode="analysis")
-
     center_img = center_t(x.clone()).clamp(0, 1)
     border_img = border_t(x.clone()).clamp(0, 1)
-    stain_img = stain_t(x.clone()).clamp(0, 1)
-    _, he_info = he_t(x.clone())
 
     out_dir.mkdir(parents=True, exist_ok=True)
     TF.to_pil_image(center_img[:3]).save(out_dir / "center_weight.png")
     TF.to_pil_image(border_img[:3]).save(out_dir / "border_suppression.png")
-    TF.to_pil_image(stain_img[:3]).save(out_dir / "stain_normalized.png")
-
-    if he_info is not None:
-        h = (he_info["H"] - he_info["H"].min()) / (he_info["H"].max() - he_info["H"].min() + 1e-8)
-        e = (he_info["E"] - he_info["E"].min()) / (he_info["E"].max() - he_info["E"].min() + 1e-8)
-        TF.to_pil_image(h).save(out_dir / "he_H_channel.png")
-        TF.to_pil_image(e).save(out_dir / "he_E_channel.png")
 
 def run_gradcam_for_one_label_file(
     model: nn.Module,
@@ -313,7 +254,6 @@ def run_gradcam_for_one_label_file(
     border_ratio: float,
 ):
     gradcam = GradCAM(model, target_layer)
-    bbox_map = load_bbox_mapping_from_cfg()
     samples = parse_label_file(label_file)
     if max_samples > 0:
         samples = samples[:max_samples]
@@ -337,15 +277,6 @@ def run_gradcam_for_one_label_file(
         x = x.unsqueeze(0)
 
         model_in = x
-        if getattr(model, "use_size_branch", False):
-            bbox_row = bbox_map.get(img_path)
-            if bbox_row is None:
-                bbox_row = (0.0, 0.0, float(pil.size[0]), float(pil.size[1]), None)
-            size_feat = build_size_features_from_bbox(bbox_row).unsqueeze(0).to(x.device)
-            model_in = {"image": x, "size_features": size_feat}
-            if getattr(model, "use_dual_scale", False):
-                model_in["image_context"] = x
-
         cam, logits = gradcam(model_in, class_idx=class_idx)
 
         prob = torch.softmax(logits, dim=1)[0].detach().cpu().numpy()

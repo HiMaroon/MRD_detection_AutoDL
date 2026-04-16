@@ -17,11 +17,9 @@ augment:
   sharpness_p: 0.5
 repeat_factor: 5
 use_weighted_sampler: true
-
 advanced:
-  # image_only | roi_size | dual_scale_size
+  # only image_only is supported
   input_mode: image_only
-  bbox_csv: "/root/autodl-tmp/projects/myq/SingleCellProject/yolo/bbox_from_yolo_preds.csv"
 
   # A: center prior / border suppression
   center_weight_mode: none # none | gaussian | elliptical
@@ -31,16 +29,3 @@ advanced:
   border_aug_prob: 0
   border_aug_width_ratio: 0.12
   border_aug_mode: low_contrast # blur | low_contrast | random_mask | mean_color
-
-  # B: ROI + size
-  roi_expand_ratio: 0.25
-  context_expand_ratio: 0.60
-  use_size_branch: false
-  size_feature_dim: 5
-  use_dual_scale: false
-
-  # C: H&E
-  use_stain_normalization: false
-  use_he_channels: false
-  he_output_mode: analysis # analysis | extra_channels
-  use_he_branch: false
