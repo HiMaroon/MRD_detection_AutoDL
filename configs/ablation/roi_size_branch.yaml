@@ -1,14 +1,14 @@
 # ROI + size branch
 advanced:
   input_mode: roi_size
-  bbox_csv: /path/to/yolo_bbox.csv
+  bbox_csv: /root/autodl-tmp/projects/myq/SingleCellProject/yolo/bbox_from_yolo_preds.csv
   roi_expand_ratio: 0.25
   use_size_branch: true
-  size_feature_dim: 9
+  size_feature_dim: 5
   use_dual_scale: false
   center_weight_mode: gaussian
   center_weight_strength: 0.35
-  use_stain_normalization: true
+  use_stain_normalization: false
 model:
   mixstyle_prob: 0.2
 train:

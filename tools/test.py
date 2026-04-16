@@ -243,8 +243,13 @@ def run_test_on_split(split: str = "val", ckpt_path: str = None, test_data_sir: 
 
     # === 2. 加载模型 ===
     num_classes = data_cfg["num_classes"]
-    core = LitSingleCell(model_cfg, num_classes=num_classes)
-    model = _Wrapper.load_from_checkpoint(ckpt_path, core=core, map_location="cpu")
+    core = LitSingleCell(
+        model_cfg,
+        num_classes=num_classes,
+        data_advanced_cfg=data_cfg.get("advanced", {}),
+    )
+    # strict=False: tolerate architecture deltas across ablations
+    model = _Wrapper.load_from_checkpoint(ckpt_path, core=core, map_location="cpu", strict=False)
     model.eval()
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -269,6 +274,25 @@ def run_test_on_split(split: str = "val", ckpt_path: str = None, test_data_sir: 
     # === 4. 推理核心逻辑 ===
     all_results = []
 
+    def _sample_to_fields(sample):
+        if isinstance(sample, dict):
+            img = sample.get("image", sample.get("image_tight"))
+            label = sample["target"]
+            extra = {}
+            for k in ["size_features", "image_context", "he"]:
+                if k in sample:
+                    extra[k] = sample[k]
+            return img, label, extra
+        # backward compatibility
+        img, label = sample
+        return img, label, {}
+
+    def _sample_path(ds, idx):
+        rec = ds.samples[idx]
+        if isinstance(rec, (tuple, list)):
+            return rec[0]
+        return getattr(rec, "img_path", f"idx_{idx}")
+
     with torch.no_grad():
         for i in tqdm(range(0, len(dataset), loader.batch_size), desc=f"Testing {split}", ncols=100):
             batch_indices = range(i, min(i + loader.batch_size, len(dataset)))
@@ -276,18 +300,29 @@ def run_test_on_split(split: str = "val", ckpt_path: str = None, test_data_sir: 
             batch_imgs = []
             batch_targets = []
             batch_paths = []
+            extras_acc = {}
 
             for idx in batch_indices:
-                img, label = dataset[idx]
-                path, _ = dataset.samples[idx]
+                sample = dataset[idx]
+                img, label, extra = _sample_to_fields(sample)
                 batch_imgs.append(img)
                 batch_targets.append(label)
-                batch_paths.append(path)
+                batch_paths.append(_sample_path(dataset, idx))
+                for k, v in extra.items():
+                    extras_acc.setdefault(k, []).append(v)
 
             x = torch.stack(batch_imgs).to(device)
             y = torch.tensor(batch_targets).to(device)
 
-            logits = model.core(x)
+            model_batch = {"image": x, "target": y}
+            for k, vals in extras_acc.items():
+                if k == "he":
+                    # HE dict is not used in this test flow
+                    continue
+                if torch.is_tensor(vals[0]):
+                    model_batch[k] = torch.stack(vals).to(device)
+
+            logits = model.core(model_batch)
             probs = torch.softmax(logits, dim=1)   # [B, C]
             preds = torch.argmax(probs, dim=1)     # [B]
 
@@ -349,32 +384,32 @@ def main():
     print("     EfficientNet 分类模型推理测试（兼容二分类 / 多分类）".center(70))
     print("=" * 70)
 
-    best_ckpt = "/root/autodl-tmp/projects/myq/SingleCellProject/outputs/260323_gt2yolo_576_0.65_2class_onlineAug/epoch=23-val_acc_macro=0.0000.ckpt"
+    best_ckpt = "/root/autodl-tmp/projects/myq/SingleCellProject/outputs/260415trial_roi_size_branch_2class/epoch=21-val_f1_macro=0.0000.ckpt"
 
     # --- BJH ---
-    test_data_sir = "/root/autodl-tmp/projects/myq/SingleCellProject/dataset/style_transfer_fda/test_BJH/beta_0p01_labels_16.txt"
-    res_dir = "/root/autodl-tmp/projects/myq/SingleCellProject/outputs_test/260323_transfer_fda_gt2yolo_576_0.65_2class_onlineAug/test_BJH/"
+    test_data_sir = "/root/autodl-tmp/projects/myq/SingleCellProject/dataset/singlecell_260323/test_BJH_labels_16.txt"
+    res_dir = "/root/autodl-tmp/projects/myq/SingleCellProject/outputs_test/260415trial_roi_size_branch_2class/test_BJH/"
     run_test_on_split(split="val", ckpt_path=best_ckpt, test_data_sir=test_data_sir, output_dir=res_dir)
 
     # --- FXH_noALL ---
-    test_data_sir = "/root/autodl-tmp/projects/myq/SingleCellProject/dataset/style_transfer_fda/test_FXH_noALL/beta_0p01_labels_16.txt"
-    res_dir = "/root/autodl-tmp/projects/myq/SingleCellProject/outputs_test/260323_transfer_fda_gt2yolo_576_0.65_2class_onlineAug/test_FXH_noALL/"
+    test_data_sir = "/root/autodl-tmp/projects/myq/SingleCellProject/dataset/singlecell_260323/test_FXH_noALL_labels_16.txt"
+    res_dir = "/root/autodl-tmp/projects/myq/SingleCellProject/outputs_test/260415trial_roi_size_branch_2class/test_FXH_noALL/"
     run_test_on_split(split="val", ckpt_path=best_ckpt, test_data_sir=test_data_sir, output_dir=res_dir)
 
     # --- TJMU ---
-    test_data_sir = "/root/autodl-tmp/projects/myq/SingleCellProject/dataset/style_transfer_fda/test_TJMU/beta_0p01_labels_16.txt"
-    res_dir = "/root/autodl-tmp/projects/myq/SingleCellProject/outputs_test/260323_transfer_fda_gt2yolo_576_0.65_2class_onlineAug/test_TJMU/"
+    test_data_sir = "/root/autodl-tmp/projects/myq/SingleCellProject/dataset/singlecell_260323/test_TJMU_labels_16.txt"
+    res_dir = "/root/autodl-tmp/projects/myq/SingleCellProject/outputs_test/260415trial_roi_size_branch_2class/test_TJMU/"
     run_test_on_split(split="val", ckpt_path=best_ckpt, test_data_sir=test_data_sir, output_dir=res_dir)
 
-    # # --- train ---
-    # test_data_sir = "/root/autodl-tmp/projects/myq/SingleCellProject/dataset/singlecell_260323/train_labels.txt"
-    # res_dir = "/root/autodl-tmp/projects/myq/SingleCellProject/outputs_test/260323_gt2yolo_576_0.65_2class_onlineAug/train/"
-    # run_test_on_split(split="val", ckpt_path=best_ckpt, test_data_sir=test_data_sir, output_dir=res_dir)
+    # --- train ---
+    test_data_sir = "/root/autodl-tmp/projects/myq/SingleCellProject/dataset/singlecell_260323/train_labels_16.txt"
+    res_dir = "/root/autodl-tmp/projects/myq/SingleCellProject/outputs_test/260415trial_roi_size_branch_2class/train/"
+    run_test_on_split(split="val", ckpt_path=best_ckpt, test_data_sir=test_data_sir, output_dir=res_dir)
 
-    # # --- val ---
-    # test_data_sir = "/root/autodl-tmp/projects/myq/SingleCellProject/dataset/singlecell_260323/val_labels.txt"
-    # res_dir = "/root/autodl-tmp/projects/myq/SingleCellProject/outputs_test/260323_gt2yolo_576_0.65_2class_onlineAug/val/"
-    # run_test_on_split(split="val", ckpt_path=best_ckpt, test_data_sir=test_data_sir, output_dir=res_dir)
+    # --- val ---
+    test_data_sir = "/root/autodl-tmp/projects/myq/SingleCellProject/dataset/singlecell_260323/val_labels_16.txt"
+    res_dir = "/root/autodl-tmp/projects/myq/SingleCellProject/outputs_test/260415trial_roi_size_branch_2class/val/"
+    run_test_on_split(split="val", ckpt_path=best_ckpt, test_data_sir=test_data_sir, output_dir=res_dir)
 
 
 if __name__ == "__main__":

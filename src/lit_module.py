@@ -130,13 +130,20 @@ class LitSingleCell(nn.Module):
         self.num_classes = num_classes
         self.advanced_cfg = data_advanced_cfg or {}
 
+        # Always define these early so later callbacks can safely access them.
+        self.freeze_backbone_epochs = int(cfg_model.get("freeze_backbone_epochs", 0) or 0)
+        self._frozen = False
+
         arch = cfg_model["arch"]
         pretrained = cfg_model.get("pretrained", True)
         drop = cfg_model.get("drop", 0.0)
         drop_path = cfg_model.get("drop_path", 0.0)
 
         self.image_encoder = ImageEncoder(arch, pretrained, drop, drop_path)
-        self.mixstyle = MixStyle(p=cfg_model.get("mixstyle_prob", 0.0), alpha=cfg_model.get("mixstyle_alpha", 0.1))
+        self.mixstyle = MixStyle(
+            p=cfg_model.get("mixstyle_prob", 0.0),
+            alpha=cfg_model.get("mixstyle_alpha", 0.1),
+        )
 
         self.use_size_branch = bool(self.advanced_cfg.get("use_size_branch", False))
         self.use_dual_scale = bool(self.advanced_cfg.get("use_dual_scale", False))
@@ -154,39 +161,70 @@ class LitSingleCell(nn.Module):
         if self.use_he_branch:
             fusion_dim += self.he_branch.out_dim
 
+        # New task-specific classifier head.
         self.classifier = nn.Linear(fusion_dim, num_classes)
+        nn.init.normal_(self.classifier.weight, std=0.02)
+        if self.classifier.bias is not None:
+            nn.init.zeros_(self.classifier.bias)
 
         local_weight_path = cfg_model.get("local_weight_path", None)
         if local_weight_path:
             raw = torch.load(local_weight_path, map_location="cpu")
             state_dict = raw["state_dict"] if isinstance(raw, dict) and "state_dict" in raw else raw
+
             clean_state = {}
             for k, v in state_dict.items():
-                if k.startswith("core."):
-                    clean_state[k[len("core."):]] = v
+                if k.startswith("core.model."):
+                    nk = k[len("core.model."):]
+                elif k.startswith("model."):
+                    nk = k[len("model."):]
                 else:
-                    clean_state[k] = v
-            self.load_state_dict(clean_state, strict=False)
+                    nk = k
+                clean_state[nk] = v
 
+            for head_k in [
+                "classifier.weight", "classifier.bias",
+                "fc.weight", "fc.bias",
+                "head.weight", "head.bias",
+                "head.fc.weight", "head.fc.bias",
+            ]:
+                clean_state.pop(head_k, None)
+
+            msg = self.image_encoder.backbone.load_state_dict(clean_state, strict=False)
+
+            print(f"[Load Weights] {local_weight_path}")
+            print(f"  missing_keys={len(msg.missing_keys)} | unexpected_keys={len(msg.unexpected_keys)}")
+            if msg.missing_keys:
+                print("  missing keys (first 20):")
+                for k in msg.missing_keys[:20]:
+                    print(f"    - {k}")
+            if msg.unexpected_keys:
+                print("  unexpected keys (first 20):")
+                for k in msg.unexpected_keys[:20]:
+                    print(f"    - {k}")
+
+        # Loss must be defined regardless of whether local weights are used.
         if class_weights is not None:
             self.criterion = nn.CrossEntropyLoss(weight=class_weights)
         else:
             self.criterion = FocalLoss(alpha=1.5, gamma=2.0, num_classes=num_classes)
 
-        self.freeze_backbone_epochs = cfg_model.get("freeze_backbone_epochs", 0)
-        self._frozen = False
-
     def maybe_freeze_backbone(self, current_epoch: int):
-        if self.freeze_backbone_epochs <= 0:
+        freeze_backbone_epochs = getattr(self, "freeze_backbone_epochs", 0)
+        if freeze_backbone_epochs <= 0:
             return
-        if current_epoch < self.freeze_backbone_epochs and not self._frozen:
+
+        if current_epoch < freeze_backbone_epochs and not self._frozen:
             for p in self.image_encoder.parameters():
                 p.requires_grad = False
             self._frozen = True
-        if current_epoch >= self.freeze_backbone_epochs and self._frozen:
+            print(f"[Epoch {current_epoch}] Backbone frozen")
+
+        if current_epoch >= freeze_backbone_epochs and self._frozen:
             for p in self.image_encoder.parameters():
                 p.requires_grad = True
             self._frozen = False
+            print(f"[Epoch {current_epoch}] Backbone unfrozen")
 
     def _extract_inputs(self, batch):
         if isinstance(batch, torch.Tensor):
@@ -220,7 +258,9 @@ class LitSingleCell(nn.Module):
         b = self._extract_inputs(batch)
         x = b["image"]
         attn = x.abs().mean(dim=1)
-        attn = (attn - attn.amin(dim=(1, 2), keepdim=True)) / (attn.amax(dim=(1, 2), keepdim=True) - attn.amin(dim=(1, 2), keepdim=True) + 1e-6)
+        attn = (attn - attn.amin(dim=(1, 2), keepdim=True)) / (
+            attn.amax(dim=(1, 2), keepdim=True) - attn.amin(dim=(1, 2), keepdim=True) + 1e-6
+        )
         return attn
 
     def border_attention_regularization(self, batch, lambda_border=0.0, lambda_center=0.0, border_ratio=0.15):

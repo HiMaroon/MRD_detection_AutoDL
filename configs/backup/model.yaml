@@ -4,5 +4,7 @@ local_weight_path: /root/autodl-tmp/projects/myq/SingleCellProject/weights/pytor
 drop: 0.3
 drop_path: 0.1
 freeze_backbone_epochs: 5
-mixstyle_prob: 0.4
+
+# style-invariant training
+mixstyle_prob: 0
 mixstyle_alpha: 0.1

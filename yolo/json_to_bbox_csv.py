@@ -52,7 +52,7 @@ def parse_args():
     parser.add_argument(
         "--out-csv",
         type=str,
-        required=True,
+        default="/root/autodl-tmp/projects/myq/SingleCellProject/yolo/bbox_from_yolo_preds.csv",
         help="Output bbox CSV path",
     )
     parser.add_argument(

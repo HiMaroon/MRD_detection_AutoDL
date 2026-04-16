@@ -7,8 +7,9 @@ advanced:
   border_aug_prob: 0.6
   border_aug_width_ratio: 0.12
   border_aug_mode: low_contrast
-  use_stain_normalization: true
+  use_stain_normalization: false
   use_he_channels: false
+  use_size_branch: false
 model:
   mixstyle_prob: 0.4
 train:
