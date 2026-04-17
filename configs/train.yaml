@@ -1,4 +1,4 @@
-output_root: /root/autodl-tmp/projects/myq/SingleCellProject/outputs/260415trial_he_branch_2class
+output_root: /root/autodl-tmp/projects/myq/SingleCellProject/outputs/260417trial_center_border
 batch_size: 512
 max_epochs: 50
 precision: 16-mixed

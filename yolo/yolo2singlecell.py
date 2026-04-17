@@ -382,41 +382,41 @@ if __name__ == "__main__":
     target_output_size = 576  # 例如：设置为 224 用于分类模型输入
     
     datasets = [
-        {
-            "name": "train",
-            "seg": r"/root/autodl-tmp/projects/myq/SingleCellProject/yolo/yolo_preds_260323/train",
-            "label": r"/root/autodl-tmp/data/MAIN_imgs_split_260312/Train",
-            "img": r"/root/autodl-tmp/data/MAIN_imgs_split_260312/Train",
-            "out": r"/root/autodl-tmp/projects/myq/SingleCellProject/dataset/singlecell_260323/train"
-        },
-        {
-            "name": "val",
-            "seg": r"/root/autodl-tmp/projects/myq/SingleCellProject/yolo/yolo_preds_260323/val",
-            "label": r"/root/autodl-tmp/data/MAIN_imgs_split_260312/Val",
-            "img": r"/root/autodl-tmp/data/MAIN_imgs_split_260312/Val",
-            "out": r"/root/autodl-tmp/projects/myq/SingleCellProject/dataset/singlecell_260323/val"
-        },
-        {
-            "name": "test_BJH",
-            "seg": r"/root/autodl-tmp/projects/myq/SingleCellProject/yolo/yolo_preds_260323/test_BJH",
-            "label": r"/root/autodl-tmp/data/BJH_imgs_260211",
-            "img": r"/root/autodl-tmp/data/BJH_imgs_260211",
-            "out": r"/root/autodl-tmp/projects/myq/SingleCellProject/dataset/singlecell_260323/test_BJH"
-        },
+        # {
+        #     "name": "train",
+        #     "seg": r"/root/autodl-tmp/projects/myq/SingleCellProject/yolo/yolo_preds_260323/train",
+        #     "label": r"/root/autodl-tmp/data/MAIN_imgs_split_260312/Train",
+        #     "img": r"/root/autodl-tmp/data/MAIN_imgs_split_260312/Train",
+        #     "out": r"/root/autodl-tmp/projects/myq/SingleCellProject/dataset/singlecell_260323/train"
+        # },
+        # {
+        #     "name": "val",
+        #     "seg": r"/root/autodl-tmp/projects/myq/SingleCellProject/yolo/yolo_preds_260323/val",
+        #     "label": r"/root/autodl-tmp/data/MAIN_imgs_split_260312/Val",
+        #     "img": r"/root/autodl-tmp/data/MAIN_imgs_split_260312/Val",
+        #     "out": r"/root/autodl-tmp/projects/myq/SingleCellProject/dataset/singlecell_260323/val"
+        # },
+        # {
+        #     "name": "test_BJH",
+        #     "seg": r"/root/autodl-tmp/projects/myq/SingleCellProject/yolo/yolo_preds_260323/test_BJH",
+        #     "label": r"/root/autodl-tmp/data/BJH_imgs_260211",
+        #     "img": r"/root/autodl-tmp/data/BJH_imgs_260211",
+        #     "out": r"/root/autodl-tmp/projects/myq/SingleCellProject/dataset/singlecell_260323/test_BJH"
+        # },
         {
             "name": "test_TJMU",
             "seg": r"/root/autodl-tmp/projects/myq/SingleCellProject/yolo/yolo_preds_260323/test_TJMU",
-            "label": r"/root/autodl-tmp/data/TJMU_imgs_260318",
-            "img": r"/root/autodl-tmp/data/TJMU_imgs_260318",
+            "label": r"/root/autodl-tmp/data/TJMU_imgs_260416",
+            "img": r"/root/autodl-tmp/data/TJMU_imgs_260416",
             "out": r"/root/autodl-tmp/projects/myq/SingleCellProject/dataset/singlecell_260323/test_TJMU"
         },
-        {
-            "name": "test_FXH_noALL",
-            "seg": r"/root/autodl-tmp/projects/myq/SingleCellProject/yolo/yolo_preds_260323/test_FXH_noALL",
-            "label": r"/root/autodl-tmp/data/FXH_imgs_noALL_260318",
-            "img": r"/root/autodl-tmp/data/FXH_imgs_noALL_260318",
-            "out": r"/root/autodl-tmp/projects/myq/SingleCellProject/dataset/singlecell_260323/test_FXH_noALL"
-        },
+        # {
+        #     "name": "test_FXH_noALL",
+        #     "seg": r"/root/autodl-tmp/projects/myq/SingleCellProject/yolo/yolo_preds_260323/test_FXH_noALL",
+        #     "label": r"/root/autodl-tmp/data/FXH_imgs_noALL_260318",
+        #     "img": r"/root/autodl-tmp/data/FXH_imgs_noALL_260318",
+        #     "out": r"/root/autodl-tmp/projects/myq/SingleCellProject/dataset/singlecell_260323/test_FXH_noALL"
+        # },
     ]
 
     for ds in datasets:

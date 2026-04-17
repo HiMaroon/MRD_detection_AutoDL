@@ -115,20 +115,23 @@ from tqdm import tqdm
 MODEL_PATH = "/root/autodl-tmp/projects/myq/SingleCellProject/yolo/cellseg/260323_MAIN_yolo11m/weights/best.pt"
 
 DATA_ROOTS = {
-    "test_FXH_noALL": Path("/root/autodl-tmp/data/FXH_imgs_noALL_260318"),
-    "test_BJH": Path("/root/autodl-tmp/data/BJH_imgs_260211"),
-    "test_TJMU": Path("/root/autodl-tmp/data/TJMU_imgs_260318"),
-    "train": Path("/root/autodl-tmp/data/MAIN_imgs_split_260323/Train"),
-    "val": Path("/root/autodl-tmp/data/MAIN_imgs_split_260323/Val"),
+    # "test_FXH_noALL": Path("/root/autodl-tmp/data/FXH_imgs_noALL_260318"),
+    # "test_BJH": Path("/root/autodl-tmp/data/BJH_imgs_260211"),
+    # "test_TJMU": Path("/root/autodl-tmp/data/TJMU_imgs_260318"),
+    # "train": Path("/root/autodl-tmp/data/MAIN_imgs_split_260323/Train"),
+    # "val": Path("/root/autodl-tmp/data/MAIN_imgs_split_260323/Val"),
+    "test_TJMU_": Path("/root/autodl-tmp/data/TJMU_imgs_260416"),
 }
 
 PRED_ROOT = Path("/root/autodl-tmp/projects/myq/SingleCellProject/yolo/yolo_preds_260323/")
 
-target_sets = [ "test_FXH_noALL",
-               "test_BJH",
-               "test_TJMU",
-               "train",
-               "val"]
+target_sets = [ 
+            #     "test_FXH_noALL",
+            #    "test_BJH",
+               "test_TJMU_",
+            #    "train",
+            #    "val"
+               ]
 
 # target_set = "val"
 

@@ -24,7 +24,7 @@ CROP_SIZE = 576           # 裁剪尺寸，细胞边界框超过此尺寸则筛�
 
 # 指定要遍历的目录
 directories = [
-    "/root/autodl-tmp/data/MAIN_imgs_260312"
+    "/root/autodl-tmp/data/TJMU_imgs_sup_260416"
     # "/root/autodl-tmp/data/FXH_imgs_260211",
     # "/root/autodl-tmp/data/BJH_imgs_260211",
     # "/root/autodl-tmp/data/BEPH_imgs_260211",

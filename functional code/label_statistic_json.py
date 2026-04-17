@@ -14,7 +14,7 @@ import csv
 # 指定要遍历的目录
 directories = [
     # "/root/autodl-tmp/data/MAIN_imgs_260323",
-    "/root/autodl-tmp/data/FXH_imgs_260318",
+    "/root/autodl-tmp/data/TJMU_imgs_sup_260416",
     # "/root/autodl-tmp/data/BJH_imgs_260211",
     # "/root/autodl-tmp/data/TJMU_imgs_260318",
     # "/root/autodl-tmp/data/MAIN_imgs_outline_mask_260211",

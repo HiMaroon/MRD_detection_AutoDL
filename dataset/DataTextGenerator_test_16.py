@@ -154,13 +154,13 @@ def DataTxtGenerator(output_dir):
     output_dir = Path(output_dir)
 
     split_names = [
-        "test_FXH_noALL",
-        "test_BJH",
+        # "test_FXH_noALL",
+        # "test_BJH",
         "test_TJMU",
-        "train",
-        "val",
-        "train_groundtruth",
-        "val_groundtruth",
+        # "train",
+        # "val",
+        # "train_groundtruth",
+        # "val_groundtruth",
     ]
 
     for split_name in split_names:
