@@ -93,8 +93,8 @@ class LabelFileDataset(Dataset):
                 img = parts[0]
                 big_label = int(parts[1])
                 small_label = int(parts[2])
-                # y = 0 if big_label == 2 else big_label
-                y = small_label
+                y = 0 if big_label == 2 else big_label
+                # y = small_label
                 records.append(SampleRecord(img_path=img, label=y))
 
         return records

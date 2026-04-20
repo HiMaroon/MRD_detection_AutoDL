@@ -58,7 +58,8 @@ def main():
     parser = argparse.ArgumentParser(description="Apply ablation yaml safely to configs/*.yaml")
     parser.add_argument(
         "--ablation",
-        default="center_border",
+        # default="center_border",
+        default="baseline",
         help="ablation name or path, e.g. center_border_only OR configs/ablation/center_border_only.yaml",
     )
     parser.add_argument("--no-backup", action="store_true", help="Do not create .bak files")

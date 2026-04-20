@@ -233,7 +233,14 @@ def calculate_and_save_metrics(df, output_dir, split, timestamp, num_classes):
     return txt_path, json_path
 
 
-def run_test_on_split(split: str = "val", ckpt_path: str = None, test_data_sir: str = None, output_dir: str = None):
+def run_test_on_split(
+    split: str = "val",
+    ckpt_path: str = None,
+    test_data_sir: str = None,
+    output_dir: str = None,
+    use_morph_branch: bool = False,
+    test_morph_csv: str = None,
+):
     assert split in ["train", "val"]
 
     # === 1. 验证 Checkpoint ===
@@ -254,10 +261,17 @@ def run_test_on_split(split: str = "val", ckpt_path: str = None, test_data_sir: 
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model.to(device)
+    if use_morph_branch and (not getattr(model.core, "use_morph_head", False)):
+        print("⚠️ use_morph_branch=True 但模型未启用 morph_head，将回退为分类-only 推理。")
 
     # === 3. 配置 DataModule 路径 ===
     test_data_cfg = data_cfg.copy()
     test_data_cfg["val_labels"] = test_data_sir
+    if test_morph_csv:
+        test_data_cfg["train_morph_csv"] = test_morph_csv
+        test_data_cfg["val_morph_csv"] = test_morph_csv
+        test_data_cfg["return_morph"] = True
+        print(f"📎 Test morph CSV: {test_morph_csv}")
 
     dm = SingleCellDataModule(
         test_data_cfg,
@@ -278,10 +292,12 @@ def run_test_on_split(split: str = "val", ckpt_path: str = None, test_data_sir: 
         if isinstance(sample, dict):
             img = sample["image"]
             label = sample["target"]
-            return img, label
+            morph = sample.get("morph", None)
+            morph_valid = sample.get("morph_valid", None)
+            return img, label, morph, morph_valid
         # backward compatibility
         img, label = sample
-        return img, label
+        return img, label, None, None
 
     def _sample_path(ds, idx):
         rec = ds.samples[idx]
@@ -296,22 +312,43 @@ def run_test_on_split(split: str = "val", ckpt_path: str = None, test_data_sir: 
             batch_imgs = []
             batch_targets = []
             batch_paths = []
+            batch_morph = []
+            batch_morph_valid = []
             for idx in batch_indices:
                 sample = dataset[idx]
-                img, label = _sample_to_fields(sample)
+                img, label, morph, morph_valid = _sample_to_fields(sample)
                 batch_imgs.append(img)
                 batch_targets.append(label)
                 batch_paths.append(_sample_path(dataset, idx))
+                batch_morph.append(morph)
+                batch_morph_valid.append(morph_valid)
 
             x = torch.stack(batch_imgs).to(device)
             y = torch.tensor(batch_targets).to(device)
-            logits = model.core({"image": x, "target": y})
+            test_batch = {"image": x, "target": y}
+            has_morph_tensor = all(m is not None for m in batch_morph) and all(v is not None for v in batch_morph_valid)
+            if has_morph_tensor:
+                test_batch["morph"] = torch.stack(batch_morph).to(device).float()
+                test_batch["morph_valid"] = torch.stack(batch_morph_valid).to(device).float()
+
+            use_morph_eval = bool(use_morph_branch) and bool(getattr(model.core, "use_morph_head", False))
+            if use_morph_eval:
+                out = model.core.forward_all(test_batch)
+                logits = out["logits"]
+                morph_pred = out.get("morph_pred", None)
+            else:
+                logits = model.core(test_batch)
+                morph_pred = None
+
             probs = torch.softmax(logits, dim=1)   # [B, C]
             preds = torch.argmax(probs, dim=1)     # [B]
 
             probs_np = probs.cpu().numpy()
             preds_np = preds.cpu().numpy()
             targets_np = y.cpu().numpy()
+            morph_pred_np = morph_pred.detach().cpu().numpy() if morph_pred is not None else None
+            morph_gt_np = test_batch["morph"].detach().cpu().numpy() if ("morph" in test_batch) else None
+            morph_valid_np = test_batch["morph_valid"].detach().cpu().numpy() if ("morph_valid" in test_batch) else None
 
             for j in range(len(targets_np)):
                 filename = Path(batch_paths[j]).name
@@ -326,6 +363,14 @@ def run_test_on_split(split: str = "val", ckpt_path: str = None, test_data_sir: 
 
                 for c in range(num_classes):
                     row[f"prob_class_{c}"] = float(probs_np[j, c])
+
+                if morph_pred_np is not None:
+                    for k in range(morph_pred_np.shape[1]):
+                        row[f"morph_pred_{k}"] = float(morph_pred_np[j, k])
+                        if morph_gt_np is not None:
+                            row[f"morph_gt_{k}"] = float(morph_gt_np[j, k])
+                        if morph_valid_np is not None:
+                            row[f"morph_valid_{k}"] = float(morph_valid_np[j, k])
 
                 all_results.append(row)
 
@@ -368,32 +413,68 @@ def main():
     print("=" * 70)
 
     # best_ckpt = "/root/autodl-tmp/projects/myq/SingleCellProject/outputs/260415trial_baseline_2class/epoch=25-val_f1_macro=0.0000.ckpt"
-    best_ckpt = "/root/autodl-tmp/projects/myq/SingleCellProject/outputs/260417trial_center_border/epoch=26-val_f1_macro=0.0000.ckpt"
+    best_ckpt = "/root/autodl-tmp/projects/myq/SingleCellProject/outputs/260417trial_baseline_morph/epoch=22-val_f1_macro=0.0000.ckpt"
+    use_morph_branch = True
 
     # --- BJH ---
     test_data_sir = "/root/autodl-tmp/projects/myq/SingleCellProject/dataset/singlecell_260323/test_BJH_labels_16.txt"
-    res_dir = "/root/autodl-tmp/projects/myq/SingleCellProject/outputs_test/260417trial_center_border/test_BJH/"
-    run_test_on_split(split="val", ckpt_path=best_ckpt, test_data_sir=test_data_sir, output_dir=res_dir)
+    res_dir = "/root/autodl-tmp/projects/myq/SingleCellProject/outputs_test/260417trial_baseline_morph_testMorphOn/test_BJH/"
+    run_test_on_split(
+        split="val",
+        ckpt_path=best_ckpt,
+        test_data_sir=test_data_sir,
+        output_dir=res_dir,
+        use_morph_branch=use_morph_branch,
+        test_morph_csv="/root/autodl-tmp/projects/myq/SingleCellProject/dataset/morph_csv_260414/test_BJH_morph.csv",
+    )
 
     # --- FXH_noALL ---
     test_data_sir = "/root/autodl-tmp/projects/myq/SingleCellProject/dataset/singlecell_260323/test_FXH_noALL_labels_16.txt"
-    res_dir = "/root/autodl-tmp/projects/myq/SingleCellProject/outputs_test/260417trial_center_border/test_FXH_noALL/"
-    run_test_on_split(split="val", ckpt_path=best_ckpt, test_data_sir=test_data_sir, output_dir=res_dir)
+    res_dir = "/root/autodl-tmp/projects/myq/SingleCellProject/outputs_test/260417trial_baseline_morph_testMorphOn/test_FXH_noALL/"
+    run_test_on_split(
+        split="val",
+        ckpt_path=best_ckpt,
+        test_data_sir=test_data_sir,
+        output_dir=res_dir,
+        use_morph_branch=use_morph_branch,
+        test_morph_csv="/root/autodl-tmp/projects/myq/SingleCellProject/dataset/morph_csv_260414/test_FXH_noALL_morph.csv",
+    )
 
     # --- TJMU ---
     test_data_sir = "/root/autodl-tmp/projects/myq/SingleCellProject/dataset/singlecell_260323/test_TJMU_labels_16.txt"
-    res_dir = "/root/autodl-tmp/projects/myq/SingleCellProject/outputs_test/260417trial_center_border/test_TJMU/"
-    run_test_on_split(split="val", ckpt_path=best_ckpt, test_data_sir=test_data_sir, output_dir=res_dir)
+    res_dir = "/root/autodl-tmp/projects/myq/SingleCellProject/outputs_test/260417trial_baseline_morph_testMorphOn/test_TJMU/"
+    run_test_on_split(
+        split="val",
+        ckpt_path=best_ckpt,
+        test_data_sir=test_data_sir,
+        output_dir=res_dir,
+        use_morph_branch=use_morph_branch,
+        test_morph_csv="/root/autodl-tmp/projects/myq/SingleCellProject/dataset/morph_csv_260414/test_TJMU_morph.csv",
+    )
 
     # --- train ---
-    test_data_sir = "/root/autodl-tmp/projects/myq/SingleCellProject/dataset/singlecell_260323/train_labels_16.txt"
-    res_dir = "/root/autodl-tmp/projects/myq/SingleCellProject/outputs_test/260417trial_center_border/train/"
-    run_test_on_split(split="val", ckpt_path=best_ckpt, test_data_sir=test_data_sir, output_dir=res_dir)
+    # test_data_sir = "/root/autodl-tmp/projects/myq/SingleCellProject/dataset/singlecell_260323/train_labels_16.txt"
+    # res_dir = "/root/autodl-tmp/projects/myq/SingleCellProject/outputs_test/260417trial_baseline_morph_testMorphOn/train/"
+    # run_test_on_split(
+    #     split="val",
+    #     ckpt_path=best_ckpt,
+    #     test_data_sir=test_data_sir,
+    #     output_dir=res_dir,
+    #     use_morph_branch=use_morph_branch,
+    #     test_morph_csv="/root/autodl-tmp/projects/myq/SingleCellProject/dataset/morph_csv_260414/train_morph.csv",
+    # )
 
     # --- val ---
     test_data_sir = "/root/autodl-tmp/projects/myq/SingleCellProject/dataset/singlecell_260323/val_labels_16.txt"
-    res_dir = "/root/autodl-tmp/projects/myq/SingleCellProject/outputs_test/260417trial_center_border/val/"
-    run_test_on_split(split="val", ckpt_path=best_ckpt, test_data_sir=test_data_sir, output_dir=res_dir)
+    res_dir = "/root/autodl-tmp/projects/myq/SingleCellProject/outputs_test/260417trial_baseline_morph_testMorphOn/val/"
+    run_test_on_split(
+        split="val",
+        ckpt_path=best_ckpt,
+        test_data_sir=test_data_sir,
+        output_dir=res_dir,
+        use_morph_branch=use_morph_branch,
+        test_morph_csv="/root/autodl-tmp/projects/myq/SingleCellProject/dataset/morph_csv_260414/val_morph.csv",
+    )
 
 
 if __name__ == "__main__":

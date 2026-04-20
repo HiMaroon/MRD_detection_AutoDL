@@ -173,22 +173,6 @@ class LitSingleCell(nn.Module):
                 for k in msg.unexpected_keys[:20]:
                     print(f"    - {k}")
 
-        stage2_ckpt_path = cfg_model.get("stage2_ckpt_path", None)
-        if stage2_ckpt_path:
-            raw = torch.load(stage2_ckpt_path, map_location="cpu")
-            state_dict = raw.get("state_dict", raw) if isinstance(raw, dict) else raw
-            clean_state = {}
-            for k, v in state_dict.items():
-                nk = k
-                if nk.startswith("core."):
-                    nk = nk[len("core."):]
-                if nk.startswith("model."):
-                    nk = nk[len("model."):]
-                clean_state[nk] = v
-            msg = self.load_state_dict(clean_state, strict=False)
-            print(f"[Load Stage2 CKPT] {stage2_ckpt_path}")
-            print(f"  missing_keys={len(msg.missing_keys)} | unexpected_keys={len(msg.unexpected_keys)}")
-
         # Loss must be defined regardless of whether local weights are used.
         if class_weights is not None:
             self.criterion = nn.CrossEntropyLoss(weight=class_weights)

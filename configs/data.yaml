@@ -1,6 +1,6 @@
 train_labels: /root/autodl-tmp/projects/myq/SingleCellProject/dataset/singlecell_260323/train_labels_16.txt
 val_labels: /root/autodl-tmp/projects/myq/SingleCellProject/dataset/singlecell_260323/val_labels_16.txt
-num_classes: 16
+num_classes: 2
 img_size: 224
 num_workers: 32
 pin_memory: true
@@ -27,19 +27,19 @@ augment:
   sharpness_p: 0.5
 repeat_factor: 5
 use_weighted_sampler: true
-return_morph: false
+return_morph: true
 morph_cols:
 - area
 - perimeter
 - circularity
 morph_dim: 3
-train_morph_csv: null
-val_morph_csv: null
+train_morph_csv: /root/autodl-tmp/projects/myq/SingleCellProject/dataset/morph_csv_260414/train_morph.csv
+val_morph_csv: /root/autodl-tmp/projects/myq/SingleCellProject/dataset/morph_csv_260414/val_morph.csv
 advanced:
   input_mode: image_only
-  center_weight_mode: gaussian
-  center_weight_strength: 0.45
+  center_weight_mode: none
+  center_weight_strength: 0.35
   center_weight_sigma: 0.45
-  border_aug_prob: 0.6
+  border_aug_prob: 0
   border_aug_width_ratio: 0.12
   border_aug_mode: low_contrast

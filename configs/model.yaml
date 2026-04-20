@@ -1,13 +1,12 @@
 arch: efficientnet_b0
 pretrained: false
 local_weight_path: /root/autodl-tmp/projects/myq/SingleCellProject/weights/pytorch_model.bin
-stage2_ckpt_path: null
 drop: 0.3
 drop_path: 0.1
 freeze_backbone_epochs: 5
-mixstyle_prob: 0.4
+mixstyle_prob: 0.0
 mixstyle_alpha: 0.1
-use_morph_head: false
+use_morph_head: true
 morph_dim: 3
 morph_hidden: 128
 lambda_morph: 0.05
