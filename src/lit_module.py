@@ -113,12 +113,29 @@ class LitSingleCell(nn.Module):
         )
 
         fusion_dim = self.image_encoder.num_features
+        self.use_morph_head = bool(cfg_model.get("use_morph_head", False))
+        self.morph_dim = int(cfg_model.get("morph_dim", 3))
+        self.morph_hidden = int(cfg_model.get("morph_hidden", 128))
+        self.lambda_morph = float(cfg_model.get("lambda_morph", 0.05))
+        self.morph_loss_name = str(cfg_model.get("morph_loss", "smoothl1")).lower()
+        if self.morph_loss_name not in {"smoothl1", "mse"}:
+            raise ValueError(f"Unsupported morph_loss={self.morph_loss_name}, expected one of ['smoothl1', 'mse']")
 
         # New task-specific classifier head.
         self.classifier = nn.Linear(fusion_dim, num_classes)
         nn.init.normal_(self.classifier.weight, std=0.02)
         if self.classifier.bias is not None:
             nn.init.zeros_(self.classifier.bias)
+
+        if self.use_morph_head:
+            self.morph_head = nn.Sequential(
+                nn.Linear(fusion_dim, self.morph_hidden),
+                nn.ReLU(inplace=True),
+                nn.Dropout(drop),
+                nn.Linear(self.morph_hidden, self.morph_dim),
+            )
+        else:
+            self.morph_head = None
 
         local_weight_path = cfg_model.get("local_weight_path", None)
         if local_weight_path:
@@ -183,15 +200,32 @@ class LitSingleCell(nn.Module):
         if isinstance(batch, torch.Tensor):
             return {"image": batch}
         if isinstance(batch, (list, tuple)):
-            x, y = batch
-            return {"image": x, "target": y}
+            if len(batch) == 2:
+                x, y = batch
+                return {"image": x, "target": y}
+            if len(batch) == 4:
+                x, y, morph, morph_valid = batch
+                return {"image": x, "target": y, "morph": morph, "morph_valid": morph_valid}
+            raise ValueError(f"Unexpected tuple/list batch format: len(batch)={len(batch)}")
         return batch
+
+    def extract_feat(self, x):
+        return self.image_encoder(self.mixstyle(x))
 
     def forward(self, batch):
         b = self._extract_inputs(batch)
-        img_feat = self.image_encoder(self.mixstyle(b["image"]))
+        img_feat = self.extract_feat(b["image"])
         logits = self.classifier(img_feat)
         return logits
+
+    def forward_all(self, batch):
+        b = self._extract_inputs(batch)
+        img_feat = self.extract_feat(b["image"])
+        logits = self.classifier(img_feat)
+        out = {"feat": img_feat, "logits": logits}
+        if self.use_morph_head:
+            out["morph_pred"] = self.morph_head(img_feat)
+        return out
 
     def estimate_attention_map(self, batch):
         b = self._extract_inputs(batch)
@@ -213,9 +247,27 @@ class LitSingleCell(nn.Module):
     def _step(self, batch, stage: str):
         b = self._extract_inputs(batch)
         targets = b["target"]
-        logits = self(batch)
+        all_out = self.forward_all(batch)
+        logits = all_out["logits"]
         loss = self.criterion(logits, targets)
-        return {"loss": loss, "logits": logits, "targets": targets}
+
+        morph_loss = torch.tensor(0.0, device=logits.device)
+        has_morph_target = ("morph" in b) and ("morph_valid" in b)
+        if self.use_morph_head and has_morph_target and ("morph_pred" in all_out):
+            morph = b["morph"].to(logits.device).float()
+            morph_valid = b["morph_valid"].to(logits.device).float()
+            morph_pred = all_out["morph_pred"]
+
+            if self.morph_loss_name == "mse":
+                per_elem_loss = F.mse_loss(morph_pred, morph, reduction="none")
+            else:
+                per_elem_loss = F.smooth_l1_loss(morph_pred, morph, reduction="none")
+
+            denom = morph_valid.sum().clamp(min=1.0)
+            morph_loss = (per_elem_loss * morph_valid).sum() / denom
+            loss = loss + self.lambda_morph * morph_loss
+
+        return {"loss": loss, "logits": logits, "targets": targets, "morph_loss": morph_loss}
 
     def training_step(self, batch):
         return self._step(batch, "train")

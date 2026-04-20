@@ -23,6 +23,13 @@ class SingleCellDataModule(pl.LightningDataModule):
 
     def setup(self, stage=None):
         advanced_cfg = self.cfg.get("advanced", {})
+        morph_cols = self.cfg.get("morph_cols", ["area", "perimeter", "circularity"])
+        morph_dim = int(self.cfg.get("morph_dim", len(morph_cols)))
+        if morph_dim != len(morph_cols):
+            raise ValueError(
+                f"Invalid morphology config: morph_dim({morph_dim}) != len(morph_cols)({len(morph_cols)})"
+            )
+        return_morph = bool(self.cfg.get("return_morph", False))
         self.train_ds = LabelFileDataset(
             self.cfg["train_labels"],
             self.cfg["img_size"],
@@ -32,6 +39,9 @@ class SingleCellDataModule(pl.LightningDataModule):
             True,
             self.cfg.get("repeat_factor", 1),
             advanced_cfg=advanced_cfg,
+            return_morph=return_morph,
+            morph_csv_path=self.cfg.get("train_morph_csv"),
+            morph_cols=morph_cols,
         )
         self.val_ds = LabelFileDataset(
             self.cfg["val_labels"],
@@ -42,6 +52,9 @@ class SingleCellDataModule(pl.LightningDataModule):
             False,
             1,
             advanced_cfg=advanced_cfg,
+            return_morph=return_morph,
+            morph_csv_path=self.cfg.get("val_morph_csv"),
+            morph_cols=morph_cols,
         )
 
         counts = Counter([s.label for s in self.train_ds.samples])

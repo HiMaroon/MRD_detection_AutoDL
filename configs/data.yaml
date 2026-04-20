@@ -27,6 +27,14 @@ augment:
   sharpness_p: 0.5
 repeat_factor: 5
 use_weighted_sampler: true
+return_morph: false
+morph_cols:
+- area
+- perimeter
+- circularity
+morph_dim: 3
+train_morph_csv: null
+val_morph_csv: null
 advanced:
   input_mode: image_only
   center_weight_mode: gaussian

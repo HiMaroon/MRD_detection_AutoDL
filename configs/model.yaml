@@ -6,3 +6,8 @@ drop_path: 0.1
 freeze_backbone_epochs: 5
 mixstyle_prob: 0.4
 mixstyle_alpha: 0.1
+use_morph_head: false
+morph_dim: 3
+morph_hidden: 128
+lambda_morph: 0.05
+morph_loss: smoothl1
