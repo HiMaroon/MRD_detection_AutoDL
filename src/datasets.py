@@ -3,8 +3,11 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional
 import random
+import csv
+import os
 
 from PIL import Image
+import numpy as np
 import torch
 from torch.utils.data import Dataset
 import torchvision.transforms as T
@@ -43,6 +46,9 @@ class LabelFileDataset(Dataset):
         training=True,
         repeat_factor=1,
         advanced_cfg: Optional[Dict[str, Any]] = None,
+        return_morph: bool = False,
+        morph_csv_path: Optional[str] = None,
+        morph_cols: Optional[List[str]] = None,
     ):
         self.advanced_cfg = advanced_cfg or {}
         self.samples = self._load_label_file(label_file)
@@ -64,6 +70,15 @@ class LabelFileDataset(Dataset):
             mode=self.advanced_cfg.get("border_aug_mode", "blur"),
         )
         self.transform = self._build_transform(img_size, mean, std, augment, training)
+
+        self.return_morph = bool(return_morph)
+        self.morph_cols = list(morph_cols or ["area", "perimeter", "circularity"])
+        self.morph_dim = len(self.morph_cols)
+        self.morph_dict_by_path: Dict[str, np.ndarray] = {}
+        self.morph_dict_by_filename: Dict[str, np.ndarray] = {}
+        self.morph_dict_by_stem: Dict[str, np.ndarray] = {}
+        if self.return_morph:
+            self._init_morph_table(morph_csv_path, self.morph_cols)
 
     def _load_label_file(self, label_file: str) -> List[SampleRecord]:
         records: List[SampleRecord] = []
@@ -125,6 +140,76 @@ class LabelFileDataset(Dataset):
         t.extend([T.ToTensor()])
         return T.Compose(t)
 
+    def _init_morph_table(self, morph_csv_path: Optional[str], morph_cols: List[str]):
+        if not morph_csv_path or (not os.path.exists(morph_csv_path)):
+            return
+
+        with open(morph_csv_path, "r", encoding="utf-8") as f:
+            reader = csv.DictReader(f)
+            for row in reader:
+                raw_path = (
+                    row.get("image_path")
+                    or row.get("img_path")
+                    or row.get("path")
+                    or ""
+                ).strip()
+                filename = (row.get("filename") or "").strip()
+
+                vals: List[float] = []
+                try:
+                    for col in morph_cols:
+                        value = float(row[col])
+                        if col in ["area", "perimeter"]:
+                            value = float(np.log1p(max(value, 0.0)))
+                        vals.append(value)
+                except (TypeError, ValueError, KeyError):
+                    continue
+
+                arr = np.asarray(vals, dtype=np.float32)
+
+                if raw_path:
+                    norm_path = os.path.normpath(raw_path)
+                    self.morph_dict_by_path[norm_path] = arr
+                    base_name = os.path.basename(norm_path)
+                    if base_name:
+                        self.morph_dict_by_filename[base_name] = arr
+
+                if filename:
+                    norm_file = os.path.basename(filename)
+                    if norm_file:
+                        self.morph_dict_by_filename[norm_file] = arr
+                    stem = os.path.splitext(norm_file)[0]
+                    if stem:
+                        self.morph_dict_by_stem[stem] = arr
+                elif raw_path:
+                    stem = os.path.splitext(os.path.basename(raw_path))[0]
+                    if stem:
+                        self.morph_dict_by_stem[stem] = arr
+
+    def _get_morph_label(self, path: str):
+        norm_path = os.path.normpath(path)
+        filename = os.path.basename(norm_path)
+        stem = os.path.splitext(filename)[0]
+
+        if norm_path in self.morph_dict_by_path:
+            morph = self.morph_dict_by_path[norm_path]
+            valid = np.ones(self.morph_dim, dtype=np.float32)
+            return morph, valid
+
+        if filename in self.morph_dict_by_filename:
+            morph = self.morph_dict_by_filename[filename]
+            valid = np.ones(self.morph_dim, dtype=np.float32)
+            return morph, valid
+
+        if stem in self.morph_dict_by_stem:
+            morph = self.morph_dict_by_stem[stem]
+            valid = np.ones(self.morph_dim, dtype=np.float32)
+            return morph, valid
+
+        morph = np.zeros(self.morph_dim, dtype=np.float32)
+        valid = np.zeros(self.morph_dim, dtype=np.float32)
+        return morph, valid
+
     def _normalize(self, x: torch.Tensor) -> torch.Tensor:
         if x.shape[0] >= 3:
             x[:3] = T.Normalize(mean=self.mean, std=self.std)(x[:3])
@@ -150,9 +235,18 @@ class LabelFileDataset(Dataset):
             pil = Image.open(rec.img_path).convert("RGB")
             img = self.transform(pil)
             img = self._post_process_tensor(img)
-            return {"image": img, "target": rec.label}
+            out = {"image": img, "target": rec.label}
+            if self.return_morph:
+                morph, valid = self._get_morph_label(rec.img_path)
+                out["morph"] = torch.from_numpy(morph)
+                out["morph_valid"] = torch.from_numpy(valid)
+            return out
 
         except Exception as e:
             print(f"\n[ERROR] Failed to load: {rec.img_path} | Error: {e}")
             dummy = torch.zeros(3, self.img_size, self.img_size, dtype=torch.float32)
-            return {"image": dummy, "target": rec.label}
+            out = {"image": dummy, "target": rec.label}
+            if self.return_morph:
+                out["morph"] = torch.zeros(self.morph_dim, dtype=torch.float32)
+                out["morph_valid"] = torch.zeros(self.morph_dim, dtype=torch.float32)
+            return out
