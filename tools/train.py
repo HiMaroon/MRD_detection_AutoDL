@@ -36,6 +36,18 @@ def main(_cfg):
     train_cfg_ = train_cfg
     wandb_cfg_ = wandb_cfg
 
+    morph_cols = data_cfg_.get("morph_cols", ["area", "perimeter", "circularity"])
+    data_morph_dim = int(data_cfg_.get("morph_dim", len(morph_cols)))
+    if data_morph_dim != len(morph_cols):
+        raise ValueError(
+            f"Invalid config: data.morph_dim({data_morph_dim}) must equal len(data.morph_cols)({len(morph_cols)})"
+        )
+    model_morph_dim = int(model_cfg_.get("morph_dim", data_morph_dim))
+    if model_morph_dim != data_morph_dim:
+        raise ValueError(
+            f"Invalid config: model.morph_dim({model_morph_dim}) must equal data.morph_dim({data_morph_dim})"
+        )
+
     out_root = train_cfg_["output_root"]
     os.makedirs(out_root, exist_ok=True)
     set_seed(train_cfg_["seed"])
@@ -414,10 +426,14 @@ def main(_cfg):
             loss = out["loss"]
             logits = out["logits"]
             targets = out["targets"]
+            morph_loss = out.get("morph_loss", None)
 
             imbalance_loss = self._compute_imbalance_loss(logits, targets)
             if imbalance_loss is not None:
-                loss = imbalance_loss
+                if morph_loss is not None:
+                    loss = imbalance_loss + self.core.lambda_morph * morph_loss
+                else:
+                    loss = imbalance_loss
 
             reg_cfg = self.train_cfg.get("attention_regularization", {})
             if reg_cfg.get("use_border_attention_reg", False):
@@ -430,6 +446,9 @@ def main(_cfg):
                 loss = loss + reg_loss
                 self.log("train/loss_border_reg", reg_loss, prog_bar=False, on_step=False, on_epoch=True, logger=True)
 
+            if morph_loss is not None:
+                self.log("train/loss_morph", morph_loss, prog_bar=False, on_step=False, on_epoch=True, logger=True)
+
             self.train_logits.append(logits.detach().cpu())
             self.train_targets.append(targets.detach().cpu())
 
@@ -441,10 +460,13 @@ def main(_cfg):
             loss = out["loss"]
             logits = out["logits"]
             targets = out["targets"]
+            morph_loss = out.get("morph_loss", None)
 
             self.val_logits.append(logits.detach().cpu())
             self.val_targets.append(targets.detach().cpu())
 
+            if morph_loss is not None:
+                self.log("val/loss_morph", morph_loss, prog_bar=False, on_step=False, on_epoch=True, logger=True)
             self.log("val/loss", loss, prog_bar=True, on_step=False, on_epoch=True, logger=True)
             return loss
 
