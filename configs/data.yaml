@@ -1,6 +1,6 @@
 train_labels: /root/autodl-tmp/projects/myq/SingleCellProject/dataset/singlecell_260323/train_labels_16.txt
 val_labels: /root/autodl-tmp/projects/myq/SingleCellProject/dataset/singlecell_260323/val_labels_16.txt
-num_classes: 2
+num_classes: 16
 img_size: 224
 num_workers: 32
 pin_memory: true

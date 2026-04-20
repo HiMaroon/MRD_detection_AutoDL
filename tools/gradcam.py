@@ -459,7 +459,7 @@ if __name__ == "__main__":
 
 '''
 python tools/gradcam.py \
-  --ckpt "/root/autodl-tmp/projects/myq/SingleCellProject/outputs/260415trial_center_border_2class/epoch=26-val_f1_macro=0.0000.ckpt" \
+  --ckpt "/root/autodl-tmp/projects/myq/SingleCellProject/outputs/260417trial_center_border/epoch=26-val_f1_macro=0.0000.ckpt" \
   --label-file "/root/autodl-tmp/projects/myq/SingleCellProject/dataset/singlecell_260323/test_TJMU_labels_16.txt" \
   --out-dir "/root/autodl-tmp/projects/myq/SingleCellProject/outputs_gradcam/debug_layers" \
   --list-conv-layers
@@ -467,14 +467,14 @@ python tools/gradcam.py \
 
 '''
 python tools/gradcam.py \
-  --ckpt "/root/autodl-tmp/projects/myq/SingleCellProject/outputs/260415trial_center_border_2class/epoch=26-val_f1_macro=0.0000.ckpt" \
+  --ckpt "/root/autodl-tmp/projects/myq/SingleCellProject/outputs/260417trial_center_border/epoch=26-val_f1_macro=0.0000.ckpt" \
   --label-file \
     "/root/autodl-tmp/projects/myq/SingleCellProject/dataset/singlecell_260323/test_TJMU_labels_16.txt" \
     "/root/autodl-tmp/projects/myq/SingleCellProject/dataset/singlecell_260323/test_BJH_labels_16.txt" \
     "/root/autodl-tmp/projects/myq/SingleCellProject/dataset/singlecell_260323/test_FXH_noALL_labels_16.txt" \
     "/root/autodl-tmp/projects/myq/SingleCellProject/dataset/singlecell_260323/train_labels_16.txt"\
     "/root/autodl-tmp/projects/myq/SingleCellProject/dataset/singlecell_260323/val_labels_16.txt"\
-  --out-dir "/root/autodl-tmp/projects/myq/SingleCellProject/outputs_gradcam/260415trial_center_border" \
+  --out-dir "/root/autodl-tmp/projects/myq/SingleCellProject/outputs_gradcam/260417trial_center_border" \
   --target-layer "image_encoder.backbone.conv_head" \
   --cam-threshold 0.6 \
   --border-ratio 0.15 \

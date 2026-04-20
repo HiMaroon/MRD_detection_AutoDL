@@ -367,31 +367,32 @@ def main():
     print("     EfficientNet 分类模型推理测试（兼容二分类 / 多分类）".center(70))
     print("=" * 70)
 
-    best_ckpt = "/root/autodl-tmp/projects/myq/SingleCellProject/outputs/260415trial_center_border_2class/epoch=21-val_f1_macro=0.0000.ckpt"
+    # best_ckpt = "/root/autodl-tmp/projects/myq/SingleCellProject/outputs/260415trial_baseline_2class/epoch=25-val_f1_macro=0.0000.ckpt"
+    best_ckpt = "/root/autodl-tmp/projects/myq/SingleCellProject/outputs/260417trial_center_border/epoch=26-val_f1_macro=0.0000.ckpt"
 
     # --- BJH ---
     test_data_sir = "/root/autodl-tmp/projects/myq/SingleCellProject/dataset/singlecell_260323/test_BJH_labels_16.txt"
-    res_dir = "/root/autodl-tmp/projects/myq/SingleCellProject/outputs_test/260415trial_center_border_2class/test_BJH/"
+    res_dir = "/root/autodl-tmp/projects/myq/SingleCellProject/outputs_test/260417trial_center_border/test_BJH/"
     run_test_on_split(split="val", ckpt_path=best_ckpt, test_data_sir=test_data_sir, output_dir=res_dir)
 
     # --- FXH_noALL ---
     test_data_sir = "/root/autodl-tmp/projects/myq/SingleCellProject/dataset/singlecell_260323/test_FXH_noALL_labels_16.txt"
-    res_dir = "/root/autodl-tmp/projects/myq/SingleCellProject/outputs_test/260415trial_center_border_2class/test_FXH_noALL/"
+    res_dir = "/root/autodl-tmp/projects/myq/SingleCellProject/outputs_test/260417trial_center_border/test_FXH_noALL/"
     run_test_on_split(split="val", ckpt_path=best_ckpt, test_data_sir=test_data_sir, output_dir=res_dir)
 
     # --- TJMU ---
     test_data_sir = "/root/autodl-tmp/projects/myq/SingleCellProject/dataset/singlecell_260323/test_TJMU_labels_16.txt"
-    res_dir = "/root/autodl-tmp/projects/myq/SingleCellProject/outputs_test/260415trial_center_border_2class/test_TJMU/"
+    res_dir = "/root/autodl-tmp/projects/myq/SingleCellProject/outputs_test/260417trial_center_border/test_TJMU/"
     run_test_on_split(split="val", ckpt_path=best_ckpt, test_data_sir=test_data_sir, output_dir=res_dir)
 
     # --- train ---
     test_data_sir = "/root/autodl-tmp/projects/myq/SingleCellProject/dataset/singlecell_260323/train_labels_16.txt"
-    res_dir = "/root/autodl-tmp/projects/myq/SingleCellProject/outputs_test/260415trial_center_border_2class/train/"
+    res_dir = "/root/autodl-tmp/projects/myq/SingleCellProject/outputs_test/260417trial_center_border/train/"
     run_test_on_split(split="val", ckpt_path=best_ckpt, test_data_sir=test_data_sir, output_dir=res_dir)
 
     # --- val ---
     test_data_sir = "/root/autodl-tmp/projects/myq/SingleCellProject/dataset/singlecell_260323/val_labels_16.txt"
-    res_dir = "/root/autodl-tmp/projects/myq/SingleCellProject/outputs_test/260415trial_center_border_2class/val/"
+    res_dir = "/root/autodl-tmp/projects/myq/SingleCellProject/outputs_test/260417trial_center_border/val/"
     run_test_on_split(split="val", ckpt_path=best_ckpt, test_data_sir=test_data_sir, output_dir=res_dir)
 
 
