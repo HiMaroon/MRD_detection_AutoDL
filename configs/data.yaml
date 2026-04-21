@@ -32,6 +32,7 @@ morph_cols:
 - area
 - perimeter
 - circularity
+# 可以替换为更多特征，比如：eccentricity, solidity, mean_h, entropy, texture_contrast
 morph_dim: 3
 train_morph_csv: /root/autodl-tmp/projects/myq/SingleCellProject/dataset/morph_csv_260414/train_morph.csv
 val_morph_csv: /root/autodl-tmp/projects/myq/SingleCellProject/dataset/morph_csv_260414/val_morph.csv

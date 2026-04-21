@@ -6,8 +6,10 @@ drop_path: 0.1
 freeze_backbone_epochs: 5
 mixstyle_prob: 0.0
 mixstyle_alpha: 0.1
-use_morph_head: true
+morph_mode: loss  # none | loss | fusion | loss+fusion
+use_morph_head: true  # backward compatibility; morph_mode will override this behavior
 morph_dim: 3
 morph_hidden: 128
+morph_fusion_hidden: 64
 lambda_morph: 0.05
 morph_loss: smoothl1
