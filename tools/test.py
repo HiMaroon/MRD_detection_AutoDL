@@ -233,7 +233,7 @@ def calculate_and_save_metrics(df, output_dir, split, timestamp, num_classes):
     return txt_path, json_path
 
 
-def run_test_on_split(split: str = "val", ckpt_path: str = None, test_data_sir: str = None, output_dir: str = None):
+def run_test_on_split(split: str = "val", ckpt_path: str = None, test_data_sir: str = None, output_dir: str = None, test_morph_csv: str = None):
     assert split in ["train", "val"]
 
     # === 1. 验证 Checkpoint ===
@@ -258,6 +258,8 @@ def run_test_on_split(split: str = "val", ckpt_path: str = None, test_data_sir: 
     # === 3. 配置 DataModule 路径 ===
     test_data_cfg = data_cfg.copy()
     test_data_cfg["val_labels"] = test_data_sir
+    if test_morph_csv is not None:
+        test_data_cfg["val_morph_csv"] = test_morph_csv
 
     dm = SingleCellDataModule(
         test_data_cfg,
@@ -270,6 +272,7 @@ def run_test_on_split(split: str = "val", ckpt_path: str = None, test_data_sir: 
     loader = dm.train_dataloader() if split == "train" else dm.val_dataloader()
     dataset = loader.dataset
     print(f"📊 [{split.upper()} SET] 样本总数：{len(dataset)} | BatchSize: {loader.batch_size} | NumClasses: {num_classes}")
+    print(f"🧬 morph_mode={model_cfg.get('morph_mode', 'none')} | return_morph={test_data_cfg.get('return_morph', False)} | val_morph_csv={test_data_cfg.get('val_morph_csv', '')}")
 
     # === 4. 推理核心逻辑 ===
     all_results = []
@@ -278,10 +281,12 @@ def run_test_on_split(split: str = "val", ckpt_path: str = None, test_data_sir: 
         if isinstance(sample, dict):
             img = sample["image"]
             label = sample["target"]
-            return img, label
+            morph = sample.get("morph", None)
+            morph_valid = sample.get("morph_valid", None)
+            return img, label, morph, morph_valid
         # backward compatibility
         img, label = sample
-        return img, label
+        return img, label, None, None
 
     def _sample_path(ds, idx):
         rec = ds.samples[idx]
@@ -296,16 +301,39 @@ def run_test_on_split(split: str = "val", ckpt_path: str = None, test_data_sir: 
             batch_imgs = []
             batch_targets = []
             batch_paths = []
+            batch_morph = []
+            batch_morph_valid = []
+            has_any_morph = False
             for idx in batch_indices:
                 sample = dataset[idx]
-                img, label = _sample_to_fields(sample)
+                img, label, morph, morph_valid = _sample_to_fields(sample)
                 batch_imgs.append(img)
                 batch_targets.append(label)
                 batch_paths.append(_sample_path(dataset, idx))
+                batch_morph.append(morph)
+                batch_morph_valid.append(morph_valid)
+                has_any_morph = has_any_morph or (morph is not None)
 
             x = torch.stack(batch_imgs).to(device)
             y = torch.tensor(batch_targets).to(device)
-            logits = model.core({"image": x, "target": y})
+            model_inputs = {"image": x, "target": y}
+            if has_any_morph:
+                morph_template = next((m for m in batch_morph if m is not None), None)
+                valid_template = next((mv for mv in batch_morph_valid if mv is not None), None)
+                if morph_template is not None:
+                    morph_tensor = torch.stack([
+                        (m if m is not None else torch.zeros_like(morph_template))
+                        for m in batch_morph
+                    ]).to(device)
+                    model_inputs["morph"] = morph_tensor
+                if valid_template is not None:
+                    morph_valid_tensor = torch.stack([
+                        (mv if mv is not None else torch.zeros_like(valid_template))
+                        for mv in batch_morph_valid
+                    ]).to(device)
+                    model_inputs["morph_valid"] = morph_valid_tensor
+
+            logits = model.core(model_inputs)
             probs = torch.softmax(logits, dim=1)   # [B, C]
             preds = torch.argmax(probs, dim=1)     # [B]
 

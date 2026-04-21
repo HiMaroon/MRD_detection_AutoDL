@@ -113,7 +113,6 @@ class LitSingleCell(nn.Module):
         )
 
         fusion_dim = self.image_encoder.num_features
-        self.use_morph_head = bool(cfg_model.get("use_morph_head", False))
         self.morph_dim = int(cfg_model.get("morph_dim", 3))
         self.morph_hidden = int(cfg_model.get("morph_hidden", 128))
         self.lambda_morph = float(cfg_model.get("lambda_morph", 0.05))
@@ -121,8 +120,28 @@ class LitSingleCell(nn.Module):
         if self.morph_loss_name not in {"smoothl1", "mse"}:
             raise ValueError(f"Unsupported morph_loss={self.morph_loss_name}, expected one of ['smoothl1', 'mse']")
 
+        # morph_mode: none / loss / fusion / loss+fusion
+        self.morph_mode = str(cfg_model.get("morph_mode", "loss" if cfg_model.get("use_morph_head", False) else "none")).lower()
+        valid_modes = {"none", "loss", "fusion", "loss+fusion"}
+        if self.morph_mode not in valid_modes:
+            raise ValueError(f"Unsupported morph_mode={self.morph_mode}, expected one of {sorted(valid_modes)}")
+        self.use_morph_head = self.morph_mode in {"loss", "loss+fusion"}
+        self.use_morph_fusion = self.morph_mode in {"fusion", "loss+fusion"}
+        self.morph_fusion_hidden = int(cfg_model.get("morph_fusion_hidden", self.morph_hidden))
+
+        if self.use_morph_fusion:
+            self.morph_fusion = nn.Sequential(
+                nn.Linear(self.morph_dim, self.morph_fusion_hidden),
+                nn.ReLU(inplace=True),
+                nn.Dropout(drop),
+            )
+            classifier_in_dim = fusion_dim + self.morph_fusion_hidden
+        else:
+            self.morph_fusion = None
+            classifier_in_dim = fusion_dim
+
         # New task-specific classifier head.
-        self.classifier = nn.Linear(fusion_dim, num_classes)
+        self.classifier = nn.Linear(classifier_in_dim, num_classes)
         nn.init.normal_(self.classifier.weight, std=0.02)
         if self.classifier.bias is not None:
             nn.init.zeros_(self.classifier.bias)
@@ -212,16 +231,28 @@ class LitSingleCell(nn.Module):
     def extract_feat(self, x):
         return self.image_encoder(self.mixstyle(x))
 
+    def _build_classifier_input(self, img_feat, morph=None):
+        if not self.use_morph_fusion:
+            return img_feat
+
+        if morph is None:
+            morph = torch.zeros(img_feat.size(0), self.morph_dim, device=img_feat.device, dtype=img_feat.dtype)
+        morph = morph.to(img_feat.device).float()
+        morph_feat = self.morph_fusion(morph)
+        return torch.cat([img_feat, morph_feat], dim=1)
+
     def forward(self, batch):
         b = self._extract_inputs(batch)
         img_feat = self.extract_feat(b["image"])
-        logits = self.classifier(img_feat)
+        cls_in = self._build_classifier_input(img_feat, b.get("morph"))
+        logits = self.classifier(cls_in)
         return logits
 
     def forward_all(self, batch):
         b = self._extract_inputs(batch)
         img_feat = self.extract_feat(b["image"])
-        logits = self.classifier(img_feat)
+        cls_in = self._build_classifier_input(img_feat, b.get("morph"))
+        logits = self.classifier(cls_in)
         out = {"feat": img_feat, "logits": logits}
         if self.use_morph_head:
             out["morph_pred"] = self.morph_head(img_feat)

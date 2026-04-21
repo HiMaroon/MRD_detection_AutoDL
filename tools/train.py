@@ -42,10 +42,18 @@ def main(_cfg):
         raise ValueError(
             f"Invalid config: data.morph_dim({data_morph_dim}) must equal len(data.morph_cols)({len(morph_cols)})"
         )
+
+    morph_mode = str(model_cfg_.get("morph_mode", "loss" if model_cfg_.get("use_morph_head", False) else "none")).lower()
+    need_morph_input = morph_mode in {"loss", "fusion", "loss+fusion"}
+
     model_morph_dim = int(model_cfg_.get("morph_dim", data_morph_dim))
-    if model_morph_dim != data_morph_dim:
+    if need_morph_input and model_morph_dim != data_morph_dim:
         raise ValueError(
-            f"Invalid config: model.morph_dim({model_morph_dim}) must equal data.morph_dim({data_morph_dim})"
+            f"Invalid config: model.morph_dim({model_morph_dim}) must equal data.morph_dim({data_morph_dim}) when morph_mode={morph_mode}"
+        )
+    if need_morph_input and (not bool(data_cfg_.get("return_morph", False))):
+        raise ValueError(
+            f"Invalid config: data.return_morph must be true when model.morph_mode={morph_mode}"
         )
 
     out_root = train_cfg_["output_root"]
