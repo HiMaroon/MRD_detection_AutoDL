@@ -488,3 +488,16 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+'''
+python tools/build_morph_yolo.py \
+  --splits_json tools/morph_splits.json \
+  --out_root dataset/morph_csv_new \
+  --features contour+weak \
+  --crop_size 576 \
+  --min_circularity 0.65 \
+  --min_area 10000 \
+  --filter_edge_cells \
+  --max_workers 16 \
+  --qa_max 100
+'''

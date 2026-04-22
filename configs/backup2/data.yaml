@@ -32,21 +32,15 @@ morph_cols:
 - area
 - perimeter
 - circularity
-- aspect_ratio
-- extent
-- convex_area
-- solidity
-- equiv_diameter
-- major_axis_length
-- eccentricity
-morph_dim: 10
+# 可以替换为更多特征，比如：eccentricity, solidity, mean_h, entropy, texture_contrast
+morph_dim: 3
 train_morph_csv: /root/autodl-tmp/projects/myq/SingleCellProject/dataset/morph_csv_260421/train_morph.csv
 val_morph_csv: /root/autodl-tmp/projects/myq/SingleCellProject/dataset/morph_csv_260421/val_morph.csv
 advanced:
   input_mode: image_only
-  center_weight_mode: gaussian
-  center_weight_strength: 0.45
+  center_weight_mode: none
+  center_weight_strength: 0.35
   center_weight_sigma: 0.45
-  border_aug_prob: 0.6
+  border_aug_prob: 0
   border_aug_width_ratio: 0.12
   border_aug_mode: low_contrast

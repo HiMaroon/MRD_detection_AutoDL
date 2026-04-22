@@ -1,4 +1,4 @@
-output_root: /root/autodl-tmp/projects/myq/SingleCellProject/outputs/morph_grid_center_border/exp_center_border_lossplusfusion_phase3_contour_10_260422_095202
+output_root: /root/autodl-tmp/projects/myq/SingleCellProject/outputs/260417trial_baseline_morph3_fusion
 batch_size: 512
 max_epochs: 50
 precision: 16-mixed
@@ -31,7 +31,7 @@ imbalance:
   logit_adjust_tau: 0
   label_smoothing: 0.05
 attention_regularization:
-  use_border_attention_reg: true
+  use_border_attention_reg: false
   lambda_border: 0.05
   lambda_center: 0.02
   border_ratio: 0.15
