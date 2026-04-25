@@ -1,7 +1,7 @@
-project: singlecell_morph_ablation
+project: singlecell
 entity: ''
 mode: online
-name: exp_center_border_lossplusfusion_phase3_contour_10_260422_095202
+name: 260424_5fold_2class_center_border_aug10
 tags:
 - MAIN
 - yolo11m

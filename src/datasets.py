@@ -93,7 +93,10 @@ class LabelFileDataset(Dataset):
                 img = parts[0]
                 big_label = int(parts[1])
                 small_label = int(parts[2])
+                # if small_label == 0:
+                #     continue
                 y = 0 if big_label == 2 else big_label
+                # y = 0 if small_label == 15 else small_label
                 # y = small_label
                 records.append(SampleRecord(img_path=img, label=y))
 
@@ -159,7 +162,7 @@ class LabelFileDataset(Dataset):
                 try:
                     for col in morph_cols:
                         value = float(row[col])
-                        if col in ["area", "perimeter"]:
+                        if col in ["area", "perimeter", "post_crop_area", "post_crop_perimeter", "pre_crop_area", "pre_crop_perimeter"]:
                             value = float(np.log1p(max(value, 0.0)))
                         vals.append(value)
                 except (TypeError, ValueError, KeyError):

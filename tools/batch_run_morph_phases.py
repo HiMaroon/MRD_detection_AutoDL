@@ -173,11 +173,11 @@ if __name__ == "__main__":
 '''
 python tools/batch_run_morph_phases.py \
   --repo-root . \
-  --phases phase1,phase2,phase3 \
-  --morph-modes loss,fusion,loss+fusion \
-  --output-root-base /root/autodl-tmp/projects/myq/SingleCellProject/outputs/morph_grid_center_border \
+  --phases phase1,phase2 \
+  --morph-modes fusion,loss+fusion \
+  --output-root-base /root/autodl-tmp/projects/myq/SingleCellProject/outputs/morph_grid_roi \
   --wandb-project singlecell_morph_ablation \
-  --name-prefix exp_center_border \
+  --name-prefix exp_roi \
   --continue-on-error \
   --config-mode inplace
-  '''
+'''

@@ -1,4 +1,4 @@
-output_root: /root/autodl-tmp/projects/myq/SingleCellProject/outputs/morph_grid_center_border/exp_center_border_lossplusfusion_phase3_contour_10_260422_095202
+output_root: /root/autodl-tmp/projects/myq/SingleCellProject/outputs/260424_5fold_2class_center_border_aug10
 batch_size: 512
 max_epochs: 50
 precision: 16-mixed
@@ -17,7 +17,7 @@ callbacks:
   early_stopping:
     monitor: val/f1_macro
     mode: max
-    patience: 6
+    patience: 10
     min_delta: 1.0e-05
   checkpoint:
     monitor: val/f1_macro

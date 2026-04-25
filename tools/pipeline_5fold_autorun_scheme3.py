@@ -220,18 +220,18 @@ def prepare_shared_segmentation_independent(args, folds: List[FoldInfo], all_pat
 def parse_args():
     p = argparse.ArgumentParser(description="方案三(独立分割划分版): 共享分割 + 5fold分类")
     p.add_argument("--repo-root", default="/root/autodl-tmp/projects/myq/SingleCellProject")
-    p.add_argument("--exp-name", default="exp_5fold")
-    p.add_argument("--excel-path", default="/root/autodl-tmp/data/patient_data_260323.xlsx")
+    p.add_argument("--exp-name", default="exp_5fold_260424")
+    p.add_argument("--excel-path", default="/root/autodl-tmp/data/patient_data_260424.xlsx")
     p.add_argument("--sheet-name", default="总表")
-    p.add_argument("--patient-xlsx", default="/root/autodl-tmp/data/patient_data_260323.xlsx")
+    p.add_argument("--patient-xlsx", default="/root/autodl-tmp/data/patient_data_260424.xlsx")
     p.add_argument("--img-root", default="/root/autodl-tmp/data/MAIN_imgs_260323")
-    p.add_argument("--output-root", default="/root/autodl-tmp/projects/myq/SingleCellProject/runs_5fold_260402")
+    p.add_argument("--output-root", default="/root/autodl-tmp/projects/myq/SingleCellProject/runs_5fold_260424")
 
     p.add_argument("--n-splits", type=int, default=5)
     p.add_argument("--random-state", type=int, default=42)
     p.add_argument("--folds", nargs="*", type=int, default=None)
     p.add_argument("--fold-split-mode", choices=["random", "reuse"], default="reuse")
-    p.add_argument("--fold-assignment-csv", default="/root/autodl-tmp/projects/myq/SingleCellProject/runs_5fold/patient_base_fold_assignment.csv")
+    p.add_argument("--fold-assignment-csv", default="/root/autodl-tmp/projects/myq/SingleCellProject/runs_5fold_260403/patient_base_fold_assignment.csv")
 
     p.add_argument("--seg-split-mode", choices=["independent_random", "independent_reuse"], default="independent_random")
     p.add_argument("--seg-val-ratio", type=float, default=0.2)
@@ -249,7 +249,7 @@ def parse_args():
 
     p.add_argument("--test-bjh-root", default="/root/autodl-tmp/data/BJH_imgs_260211")
     p.add_argument("--test-fxh-root", default="/root/autodl-tmp/data/FXH_imgs_noALL_260318")
-    p.add_argument("--test-tjmu-root", default="/root/autodl-tmp/data/TJMU_imgs_260318")
+    p.add_argument("--test-tjmu-root", default="/root/autodl-tmp/data/TJMU_imgs_260416")
 
     p.add_argument("--crop-size", type=int, default=576)
     p.add_argument("--output-size", type=int, default=224)

@@ -25,23 +25,16 @@ augment:
   saturation: 0.1
   sharpness_factor: 2.0
   sharpness_p: 0.5
-repeat_factor: 5
+repeat_factor: 10
 use_weighted_sampler: true
-return_morph: true
+return_morph: false
 morph_cols:
 - area
 - perimeter
 - circularity
-- aspect_ratio
-- extent
-- convex_area
-- solidity
-- equiv_diameter
-- major_axis_length
-- eccentricity
-morph_dim: 10
-train_morph_csv: /root/autodl-tmp/projects/myq/SingleCellProject/dataset/morph_csv_260421/train_morph.csv
-val_morph_csv: /root/autodl-tmp/projects/myq/SingleCellProject/dataset/morph_csv_260421/val_morph.csv
+morph_dim: 3
+train_morph_csv: #/root/autodl-tmp/projects/myq/SingleCellProject/dataset/morph_csv_new/train_morph.csv
+val_morph_csv: #/root/autodl-tmp/projects/myq/SingleCellProject/dataset/morph_csv_new/val_morph.csv
 advanced:
   input_mode: image_only
   center_weight_mode: gaussian

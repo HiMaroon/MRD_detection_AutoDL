@@ -20,7 +20,7 @@ def map_big_label(raw_label: str) -> int:
 
     positive_group = {"N", "N1", "M", "M1", "R", "R1", "J", "J1"}
     negative_group = {
-        "V", "0",
+        #"V", "0",
         "N0", "N2", "N3", "N4", "N5",
         "E", "B", "E1", "B1",
         "M0", "M2",
@@ -154,13 +154,13 @@ def DataTxtGenerator(output_dir):
     output_dir = Path(output_dir)
 
     split_names = [
-        # "test_FXH_noALL",
-        # "test_BJH",
+        "test_FXH_noALL",
+        "test_BJH",
         "test_TJMU",
-        # "train",
-        # "val",
-        # "train_groundtruth",
-        # "val_groundtruth",
+        "train",
+        "val",
+        "train_groundtruth",
+        "val_groundtruth",
     ]
 
     for split_name in split_names:

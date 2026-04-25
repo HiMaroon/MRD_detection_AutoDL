@@ -628,17 +628,17 @@ def run_fold_pipeline(args, fold: FoldInfo):
 def parse_args():
     p = argparse.ArgumentParser(description="5-fold 自动化训练流水线（固定 YOLO 分割 + 分类器 5-fold 训练）")
     p.add_argument("--repo-root", default="/root/autodl-tmp/projects/myq/SingleCellProject")
-    p.add_argument("--exp-name", default="exp_5fold")
-    p.add_argument("--excel-path", default="/root/autodl-tmp/data/patient_data_260323.xlsx")
+    p.add_argument("--exp-name", default="exp_5fold_260425")
+    p.add_argument("--excel-path", default="/root/autodl-tmp/data/patient_data_260416.xlsx")
     p.add_argument("--sheet-name", default="总表")
-    p.add_argument("--patient-xlsx", default="/root/autodl-tmp/data/patient_data_260323.xlsx")
+    p.add_argument("--patient-xlsx", default="/root/autodl-tmp/data/patient_data_260416.xlsx")
     p.add_argument("--img-root", default="/root/autodl-tmp/data/MAIN_imgs_260323")
-    p.add_argument("--output-root", default="/root/autodl-tmp/projects/myq/SingleCellProject/runs_5fold_260403")
+    p.add_argument("--output-root", default="/root/autodl-tmp/projects/myq/SingleCellProject/runs_5fold_260425")
 
     # 新增：可直接使用已有的 patient_base_fold_assignment.csv
     p.add_argument(
         "--assignment-csv",
-        default="/root/autodl-tmp/projects/myq/SingleCellProject/runs_5fold/patient_base_fold_assignment.csv",
+        default="/root/autodl-tmp/projects/myq/SingleCellProject/runs_5fold_260403/patient_base_fold_assignment.csv",
         help="可选。已有的 patient_base_fold_assignment.csv 路径；提供后将直接按该文件中的 fold 分配执行。",
     )
 
@@ -649,7 +649,7 @@ def parse_args():
     # YOLO 仅做固定模型推理
     p.add_argument(
         "--yolo-init-weight",
-        default="/root/autodl-tmp/projects/myq/SingleCellProject/yolo/cellseg/exp_5fold_shared_seg_independent/weights/best.pt",
+        default="/root/autodl-tmp/projects/myq/SingleCellProject/yolo/cellseg/exp_5fold_260424_shared_seg_independent2/weights/best.pt",
         help="固定使用的 YOLO 分割权重，不再在每个 fold 重新训练。",
     )
     p.add_argument("--yolo-conf", type=float, default=0.25)
@@ -662,7 +662,7 @@ def parse_args():
 
     p.add_argument("--test-bjh-root", default="/root/autodl-tmp/data/BJH_imgs_260211")
     p.add_argument("--test-fxh-root", default="/root/autodl-tmp/data/FXH_imgs_noALL_260318")
-    p.add_argument("--test-tjmu-root", default="/root/autodl-tmp/data/TJMU_imgs_260318")
+    p.add_argument("--test-tjmu-root", default="/root/autodl-tmp/data/TJMU_imgs_260416")
 
     p.add_argument("--crop-size", type=int, default=576)
     p.add_argument("--output-size", type=int, default=224)
