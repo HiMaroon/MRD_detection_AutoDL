@@ -235,30 +235,27 @@ class LitSingleCell(nn.Module):
     def extract_feat(self, x):
         return self.image_encoder(self.mixstyle(x))
 
-    def _build_classifier_input(self, img_feat, morph=None, morph_valid=None):
+    def _build_classifier_input(self, img_feat, morph=None):
         if not self.use_morph_fusion:
             return img_feat
 
         if morph is None:
             morph = torch.zeros(img_feat.size(0), self.morph_dim, device=img_feat.device, dtype=img_feat.dtype)
         morph = morph.to(img_feat.device).float()
-        if morph_valid is not None:
-            morph_valid = morph_valid.to(img_feat.device).float()
-            morph = morph * morph_valid
         morph_feat = self.morph_fusion(morph)
         return torch.cat([img_feat, morph_feat], dim=1)
 
     def forward(self, batch):
         b = self._extract_inputs(batch)
         img_feat = self.extract_feat(b["image"])
-        cls_in = self._build_classifier_input(img_feat, b.get("morph"), b.get("morph_valid"))
+        cls_in = self._build_classifier_input(img_feat, b.get("morph"))
         logits = self.classifier(cls_in)
         return logits
 
     def forward_all(self, batch):
         b = self._extract_inputs(batch)
         img_feat = self.extract_feat(b["image"])
-        cls_in = self._build_classifier_input(img_feat, b.get("morph"), b.get("morph_valid"))
+        cls_in = self._build_classifier_input(img_feat, b.get("morph"))
         logits = self.classifier(cls_in)
         out = {"feat": img_feat, "logits": logits}
         if self.use_morph_head:
@@ -291,20 +288,9 @@ class LitSingleCell(nn.Module):
 
         morph_loss = torch.tensor(0.0, device=logits.device)
         has_morph_target = ("morph" in b) and ("morph_valid" in b)
-        if has_morph_target:
-            morph_valid = b["morph_valid"].to(logits.device).float()
-            morph_coverage = morph_valid.mean()
-            self.log(
-                f"{stage}/morph_coverage",
-                morph_coverage,
-                prog_bar=False,
-                on_step=False,
-                on_epoch=True,
-                batch_size=targets.size(0),
-            )
-
         if self.use_morph_head and has_morph_target and ("morph_pred" in all_out):
             morph = b["morph"].to(logits.device).float()
+            morph_valid = b["morph_valid"].to(logits.device).float()
             morph_pred = all_out["morph_pred"]
 
             if self.morph_loss_name == "mse":
