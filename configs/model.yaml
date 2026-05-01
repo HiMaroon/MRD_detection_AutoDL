@@ -3,7 +3,7 @@ pretrained: false
 local_weight_path: /root/autodl-tmp/projects/myq/SingleCellProject/weights/pytorch_model.bin
 drop: 0.3
 drop_path: 0.1
-freeze_backbone_epochs: 3
+freeze_backbone_epochs: 5
 mixstyle_prob: 0.4
 mixstyle_alpha: 0.1
 morph_mode: none

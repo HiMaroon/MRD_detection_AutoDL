@@ -380,8 +380,8 @@ def plot_patient_ratios(plot_df: pd.DataFrame, save_path: Path, title: str):
     add_value_labels(rects2)
 
     xtick_labels = [
-        f"{str(pid)[:20]}\n{t if pd.notna(t) else 'NA'}"
-        for pid, t in zip(plot_df["patient_id"], plot_df["type"])
+    f"{str(pid)[:20]}\n{t if pd.notna(t) else 'NA'}\nN={int(n) if pd.notna(n) else 'NA'}"
+    for pid, t, n in zip(plot_df["patient_id"], plot_df["type"], plot_df["n_cells"])
     ]
 
     ax.set_xticks(x)
@@ -612,9 +612,14 @@ def plot_three_ratio_bars(plot_df: pd.DataFrame, save_path: Path, title: str):
 
     if "type" in plot_df.columns:
         xtick_labels = [
-            f"{str(pid)[:20]}\n{t if pd.notna(t) else 'NA'}"
-            for pid, t in zip(plot_df["patient_id"], plot_df["type"])
-        ]
+        f"{str(pid)[:20]}\n{t if pd.notna(t) else 'NA'}\nN5={int(n5) if pd.notna(n5) else 'NA'}, Ns={int(ns) if pd.notna(ns) else 'NA'}"
+        for pid, t, n5, ns in zip(
+            plot_df["patient_id"],
+            plot_df["type"],
+            plot_df["ensemble_n_cells"],
+            plot_df["single_n_cells"],
+        )
+        ]   
     else:
         xtick_labels = [str(pid)[:20] for pid in plot_df["patient_id"]]
 
@@ -808,7 +813,7 @@ def parse_args():
     p = argparse.ArgumentParser(description="融合 5-fold 结果，追加患者级分析，并可与非5-fold结果对比")
     p.add_argument(
         "--root",
-        default="/root/autodl-tmp/projects/myq/SingleCellProject/runs_5fold_260403",
+        default="/root/autodl-tmp/projects/myq/SingleCellProject/runs_5fold_exp_5fold_center_border_aug10",
         help="包含 fold*/eval 的 5-fold 根目录",
     )
     p.add_argument(
@@ -835,7 +840,7 @@ def parse_args():
     )
     p.add_argument(
         "--patient-info-xlsx",
-        default="/root/autodl-tmp/data/patient_data_260323.xlsx",
+        default="/root/autodl-tmp/data/patient_data_260416.xlsx",
         help="患者信息表；若不存在则仍会输出无类型患者统计",
     )
     return p.parse_args()

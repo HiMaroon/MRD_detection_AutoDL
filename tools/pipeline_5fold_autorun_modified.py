@@ -628,12 +628,12 @@ def run_fold_pipeline(args, fold: FoldInfo):
 def parse_args():
     p = argparse.ArgumentParser(description="5-fold 自动化训练流水线（固定 YOLO 分割 + 分类器 5-fold 训练）")
     p.add_argument("--repo-root", default="/root/autodl-tmp/projects/myq/SingleCellProject")
-    p.add_argument("--exp-name", default="exp_5fold_260425")
+    p.add_argument("--exp-name", default="exp_5fold_center_border_aug10")
     p.add_argument("--excel-path", default="/root/autodl-tmp/data/patient_data_260416.xlsx")
     p.add_argument("--sheet-name", default="总表")
     p.add_argument("--patient-xlsx", default="/root/autodl-tmp/data/patient_data_260416.xlsx")
     p.add_argument("--img-root", default="/root/autodl-tmp/data/MAIN_imgs_260323")
-    p.add_argument("--output-root", default="/root/autodl-tmp/projects/myq/SingleCellProject/runs_5fold_260425")
+    p.add_argument("--output-root", default="/root/autodl-tmp/projects/myq/SingleCellProject/runs_5fold_exp_5fold_center_border_aug10")
 
     # 新增：可直接使用已有的 patient_base_fold_assignment.csv
     p.add_argument(

@@ -163,7 +163,11 @@ class LitSingleCell(nn.Module):
 
             clean_state = {}
             for k, v in state_dict.items():
-                if k.startswith("core.model."):
+                if k.startswith("core.image_encoder.backbone."):
+                    nk = k[len("core.image_encoder.backbone."):]
+                elif k.startswith("image_encoder.backbone."):
+                    nk = k[len("image_encoder.backbone."):]
+                elif k.startswith("core.model."):
                     nk = k[len("core.model."):]
                 elif k.startswith("model."):
                     nk = k[len("model."):]
