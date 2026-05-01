@@ -435,6 +435,7 @@ def main(_cfg):
             logits = out["logits"]
             targets = out["targets"]
             morph_loss = out.get("morph_loss", None)
+            morph_coverage = out.get("morph_coverage", None)
 
             imbalance_loss = self._compute_imbalance_loss(logits, targets)
             if imbalance_loss is not None:
@@ -456,6 +457,8 @@ def main(_cfg):
 
             if morph_loss is not None:
                 self.log("train/loss_morph", morph_loss, prog_bar=False, on_step=False, on_epoch=True, logger=True)
+            if morph_coverage is not None:
+                self.log("train/morph_coverage", morph_coverage, prog_bar=False, on_step=False, on_epoch=True, logger=True)
 
             self.train_logits.append(logits.detach().cpu())
             self.train_targets.append(targets.detach().cpu())
@@ -469,12 +472,15 @@ def main(_cfg):
             logits = out["logits"]
             targets = out["targets"]
             morph_loss = out.get("morph_loss", None)
+            morph_coverage = out.get("morph_coverage", None)
 
             self.val_logits.append(logits.detach().cpu())
             self.val_targets.append(targets.detach().cpu())
 
             if morph_loss is not None:
                 self.log("val/loss_morph", morph_loss, prog_bar=False, on_step=False, on_epoch=True, logger=True)
+            if morph_coverage is not None:
+                self.log("val/morph_coverage", morph_coverage, prog_bar=False, on_step=False, on_epoch=True, logger=True)
             self.log("val/loss", loss, prog_bar=True, on_step=False, on_epoch=True, logger=True)
             return loss
 
