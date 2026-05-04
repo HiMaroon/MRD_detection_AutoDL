@@ -107,6 +107,8 @@ def main(_cfg):
             self.train_targets = []
             self.val_logits = []
             self.val_targets = []
+            self.train_morph_coverage = []
+            self.val_morph_coverage = []
 
             # 当前 epoch 的 train/val 汇总缓存
             self.epoch_metric_buffer = {}
@@ -164,6 +166,12 @@ def main(_cfg):
                     return v
                 return x.tolist()
             return x
+
+        def _mean_scalar(self, values):
+            if len(values) == 0:
+                return None
+            t = torch.stack([v.detach().float().cpu() for v in values])
+            return t.mean().item()
 
         def _safe_binary_auroc(self, probs_1d, binary_targets):
             """
@@ -435,6 +443,7 @@ def main(_cfg):
             logits = out["logits"]
             targets = out["targets"]
             morph_loss = out.get("morph_loss", None)
+            morph_coverage = out.get("morph_coverage", None)
 
             imbalance_loss = self._compute_imbalance_loss(logits, targets)
             if imbalance_loss is not None:
@@ -456,6 +465,9 @@ def main(_cfg):
 
             if morph_loss is not None:
                 self.log("train/loss_morph", morph_loss, prog_bar=False, on_step=False, on_epoch=True, logger=True)
+            if morph_coverage is not None:
+                self.log("train/morph_coverage", morph_coverage, prog_bar=False, on_step=False, on_epoch=True, logger=True)
+                self.train_morph_coverage.append(morph_coverage)
 
             self.train_logits.append(logits.detach().cpu())
             self.train_targets.append(targets.detach().cpu())
@@ -469,12 +481,16 @@ def main(_cfg):
             logits = out["logits"]
             targets = out["targets"]
             morph_loss = out.get("morph_loss", None)
+            morph_coverage = out.get("morph_coverage", None)
 
             self.val_logits.append(logits.detach().cpu())
             self.val_targets.append(targets.detach().cpu())
 
             if morph_loss is not None:
                 self.log("val/loss_morph", morph_loss, prog_bar=False, on_step=False, on_epoch=True, logger=True)
+            if morph_coverage is not None:
+                self.log("val/morph_coverage", morph_coverage, prog_bar=False, on_step=False, on_epoch=True, logger=True)
+                self.val_morph_coverage.append(morph_coverage)
             self.log("val/loss", loss, prog_bar=True, on_step=False, on_epoch=True, logger=True)
             return loss
 
@@ -485,8 +501,13 @@ def main(_cfg):
                 prefix="train",
                 sync_dist=False,
             )
+            train_cov = self._mean_scalar(self.train_morph_coverage)
+            if train_cov is not None:
+                print(f"[Epoch {self.current_epoch}] Train | MorphCoverage: {train_cov:.4f}")
+                self.epoch_metric_buffer["train/morph_coverage"] = train_cov
             self.train_logits.clear()
             self.train_targets.clear()
+            self.train_morph_coverage.clear()
 
         def on_validation_epoch_end(self):
             self._finalize_epoch_metrics(
@@ -495,8 +516,13 @@ def main(_cfg):
                 prefix="val",
                 sync_dist=True,
             )
+            val_cov = self._mean_scalar(self.val_morph_coverage)
+            if val_cov is not None:
+                print(f"[Epoch {self.current_epoch}] Val | MorphCoverage: {val_cov:.4f}")
+                self.epoch_metric_buffer["val/morph_coverage"] = val_cov
             self.val_logits.clear()
             self.val_targets.clear()
+            self.val_morph_coverage.clear()
 
             # 一个完整 epoch 的 train/val 指标齐了，这里统一写
             self._flush_epoch_metrics()

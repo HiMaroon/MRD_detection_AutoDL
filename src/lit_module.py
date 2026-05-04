@@ -290,18 +290,11 @@ class LitSingleCell(nn.Module):
         loss = self.criterion(logits, targets)
 
         morph_loss = torch.tensor(0.0, device=logits.device)
+        morph_coverage = None
         has_morph_target = ("morph" in b) and ("morph_valid" in b)
         if has_morph_target:
             morph_valid = b["morph_valid"].to(logits.device).float()
             morph_coverage = morph_valid.mean()
-            self.log(
-                f"{stage}/morph_coverage",
-                morph_coverage,
-                prog_bar=False,
-                on_step=False,
-                on_epoch=True,
-                batch_size=targets.size(0),
-            )
 
         if self.use_morph_head and has_morph_target and ("morph_pred" in all_out):
             morph = b["morph"].to(logits.device).float()
@@ -316,7 +309,7 @@ class LitSingleCell(nn.Module):
             morph_loss = (per_elem_loss * morph_valid).sum() / denom
             loss = loss + self.lambda_morph * morph_loss
 
-        return {"loss": loss, "logits": logits, "targets": targets, "morph_loss": morph_loss}
+        return {"loss": loss, "logits": logits, "targets": targets, "morph_loss": morph_loss, "morph_coverage": morph_coverage}
 
     def training_step(self, batch):
         return self._step(batch, "train")
