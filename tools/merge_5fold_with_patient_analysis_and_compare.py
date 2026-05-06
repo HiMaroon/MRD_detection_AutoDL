@@ -813,7 +813,7 @@ def parse_args():
     p = argparse.ArgumentParser(description="融合 5-fold 结果，追加患者级分析，并可与非5-fold结果对比")
     p.add_argument(
         "--root",
-        default="/root/autodl-tmp/projects/myq/SingleCellProject/runs_5fold_exp_5fold_center_border_aug10",
+        default="/root/autodl-tmp/projects/myq/SingleCellProject/runs_5fold_exp_morph4_center_border_aug10",
         help="包含 fold*/eval 的 5-fold 根目录",
     )
     p.add_argument(

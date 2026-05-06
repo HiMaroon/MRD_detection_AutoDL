@@ -1,7 +1,7 @@
 project: singlecell
 entity: ''
 mode: online
-name: 260501trial_2class_center_border_morph_loss_4features_lambda1
+name: exp_5fold_morph4_center_border_aug10
 tags:
 - MAIN
 - yolo11m

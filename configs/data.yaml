@@ -25,7 +25,7 @@ augment:
   saturation: 0.1
   sharpness_factor: 2.0
   sharpness_p: 0.5
-repeat_factor: 5
+repeat_factor: 10
 use_weighted_sampler: false
 return_morph: true
 morph_cols:

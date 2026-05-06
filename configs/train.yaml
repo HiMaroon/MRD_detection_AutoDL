@@ -1,4 +1,4 @@
-output_root: /root/autodl-tmp/projects/myq/SingleCellProject/outputs/260501trial_2class_center_border_morph_loss_4features_lambda1
+output_root: /root/autodl-tmp/projects/myq/SingleCellProject/outputs/exp_5fold_morph4_center_border_aug10
 batch_size: 512
 max_epochs: 50
 precision: 16-mixed
