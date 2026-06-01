@@ -1,7 +1,8 @@
 project: singlecell
 entity: ''
 mode: online
-name: exp_5fold_morph4_center_border_aug10
+name: trial260601_NM_morph4_center_border_aug5_2class
 tags:
 - MAIN
 - yolo11m
+- NM

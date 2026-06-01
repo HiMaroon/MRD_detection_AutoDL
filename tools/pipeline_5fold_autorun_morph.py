@@ -712,23 +712,24 @@ def run_fold_pipeline(args, fold: FoldInfo):
 def parse_args():
     p = argparse.ArgumentParser(description="5-fold 自动化训练流水线（固定 YOLO 分割 + 分类器 5-fold 训练）")
     p.add_argument("--repo-root", default="/root/autodl-tmp/projects/myq/SingleCellProject")
-    p.add_argument("--exp-name", default="exp_5fold_morph4_center_border_aug10")
+    p.add_argument("--exp-name", default="exp_5fold_NM_morph4_center_border_aug10")
     p.add_argument("--excel-path", default="/root/autodl-tmp/data/patient_data_260416.xlsx")
     p.add_argument("--sheet-name", default="总表")
     p.add_argument("--patient-xlsx", default="/root/autodl-tmp/data/patient_data_260416.xlsx")
-    p.add_argument("--img-root", default="/root/autodl-tmp/data/MAIN_imgs_260323")
-    p.add_argument("--output-root", default="/root/autodl-tmp/projects/myq/SingleCellProject/runs_5fold_exp_morph4_center_border_aug10")
+    p.add_argument("--img-root", default="/root/autodl-tmp/data/MAIN_imgs_260601")
+    p.add_argument("--output-root", default="/root/autodl-tmp/projects/myq/SingleCellProject/exp_5fold_NM_morph4_center_border_aug10")
 
     # 新增：可直接使用已有的 patient_base_fold_assignment.csv
     p.add_argument(
         "--assignment-csv",
-        default="/root/autodl-tmp/projects/myq/SingleCellProject/runs_5fold_260403/patient_base_fold_assignment.csv",
+        default=None,
+        # default="/root/autodl-tmp/projects/myq/SingleCellProject/runs_5fold_260403/patient_base_fold_assignment.csv",
         help="可选。已有的 patient_base_fold_assignment.csv 路径；提供后将直接按该文件中的 fold 分配执行。",
     )
 
     p.add_argument("--n-splits", type=int, default=5)
     p.add_argument("--random-state", type=int, default=42)
-    p.add_argument("--folds", nargs="*", type=int, default=[4,5], help="仅运行指定 fold，例如 --folds 1 3")
+    p.add_argument("--folds", nargs="*", type=int, default=[1,2,3,4,5], help="仅运行指定 fold，例如 --folds 1 3")
 
     # YOLO 仅做固定模型推理
     p.add_argument(
@@ -743,7 +744,10 @@ def parse_args():
     p.add_argument("--yolo-predict-chunk-size", type=int, default=256, help="YOLO 推理分块大小，防止内存爆炸")
     p.add_argument("--yolo-device", default="0", help="YOLO 推理设备，如 0/cpu")
     p.add_argument("--yolo-predict-no-half", action="store_true", help="禁用半精度推理（默认启用）")
-    p.add_argument("--reuse-fold-root", default="/root/autodl-tmp/projects/myq/SingleCellProject/runs_5fold_exp_5fold_center_border_aug10", help="可选。复用某次5-fold结果根目录（含 fold*/yolo_preds 与 singlecell），跳过 YOLO 与单细胞生成")
+    p.add_argument("--reuse-fold-root", 
+                #    default="/root/autodl-tmp/projects/myq/SingleCellProject/runs_5fold_exp_5fold_center_border_aug10", 
+                   default=None,
+                   help="可选。复用某次5-fold结果根目录（含 fold*/yolo_preds 与 singlecell），跳过 YOLO 与单细胞生成")
 
     p.add_argument("--test-bjh-root", default="/root/autodl-tmp/data/BJH_imgs_260211")
     p.add_argument("--test-fxh-root", default="/root/autodl-tmp/data/FXH_imgs_noALL_260318")

@@ -1,5 +1,5 @@
-train_labels: /root/autodl-tmp/projects/myq/SingleCellProject/dataset/singlecell_260323/train_labels_16.txt
-val_labels: /root/autodl-tmp/projects/myq/SingleCellProject/dataset/singlecell_260323/val_labels_16.txt
+train_labels: /root/autodl-tmp/projects/myq/SingleCellProject/dataset/singlecell_260323/train_labels_NM_16.txt
+val_labels: /root/autodl-tmp/projects/myq/SingleCellProject/dataset/singlecell_260323/val_labels_NM_16.txt
 num_classes: 2
 img_size: 224
 num_workers: 32
@@ -27,7 +27,7 @@ augment:
   sharpness_p: 0.5
 repeat_factor: 10
 use_weighted_sampler: false
-return_morph: true
+return_morph: True
 morph_cols:
 - area
 - perimeter

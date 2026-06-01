@@ -24,7 +24,7 @@ POSITIVE_CLASS = 1
 # - 不在字典中的也统一算 0
 cell_dict_big = {
     "V": 0, "0": 0,
-    "N": 1, "N1": 1, "M": 1, "M1": 1, "R": 1, "R1": 1, "J": 1, "J1": 1,
+    "N": 1, "N1": 2, "M": 1, "M1": 2, "R": 2, "R1": 2, "J": 2, "J1": 2,
     "N0": 2, "N2": 2, "N3": 2, "N4": 2, "N5": 2,
     "E": 2, "B": 2, "E1": 2, "B1": 2,
     "M0": 2, "M2": 2, "R2": 2, "R3": 2,
@@ -492,42 +492,42 @@ def run_one_task(cell_result_csv, patient_info_xlsx, output_png, output_excel):
 def main():
     set_chinese_font()
 
-    patient_info_xlsx = "/root/autodl-tmp/data/样本信息整理260323.xlsx"
+    patient_info_xlsx = "/root/autodl-tmp/data/patient_data_260416.xlsx"
 
     tasks = [
         {
-            "cell_result_csv": "/root/autodl-tmp/projects/myq/SingleCellProject/outputs_test/260323_gt2yolo_576_0.65_2class_onlineAug/val/val_results.csv",
+            "cell_result_csv": "/root/autodl-tmp/projects/myq/SingleCellProject/outputs_test/trial260601_NM_center_border_aug5_2class/val/val_results.csv",
             "patient_info_xlsx": patient_info_xlsx,
-            "output_png": "/root/autodl-tmp/projects/myq/SingleCellProject/outputs_patient/260323_gt2yolo_576_0.65_2class_onlineAug/val/patient_ratio_from_cell_results.png",
-            "output_excel": "/root/autodl-tmp/projects/myq/SingleCellProject/outputs_patient/260323_gt2yolo_576_0.65_2class_onlineAug/val/patient_ratio_from_cell_results.xlsx",
+            "output_png": "/root/autodl-tmp/projects/myq/SingleCellProject/outputs_patient/trial260601_NM_center_border_aug5_2class/val/patient_ratio_from_cell_results.png",
+            "output_excel": "/root/autodl-tmp/projects/myq/SingleCellProject/outputs_patient/trial260601_NM_center_border_aug5_2class/val/patient_ratio_from_cell_results.xlsx",
         },
 
         {
-            "cell_result_csv": "/root/autodl-tmp/projects/myq/SingleCellProject/outputs_test/260323_gt2yolo_576_0.65_2class_onlineAug/train/val_results.csv",
+            "cell_result_csv": "/root/autodl-tmp/projects/myq/SingleCellProject/outputs_test/trial260601_NM_center_border_aug5_2class/train/val_results.csv",
             "patient_info_xlsx": patient_info_xlsx,
-            "output_png": "/root/autodl-tmp/projects/myq/SingleCellProject/outputs_patient/260323_gt2yolo_576_0.65_2class_onlineAug/train/patient_ratio_from_cell_results.png",
-            "output_excel": "/root/autodl-tmp/projects/myq/SingleCellProject/outputs_patient/260323_gt2yolo_576_0.65_2class_onlineAug/train/patient_ratio_from_cell_results.xlsx",
+            "output_png": "/root/autodl-tmp/projects/myq/SingleCellProject/outputs_patient/trial260601_NM_center_border_aug5_2class/train/patient_ratio_from_cell_results.png",
+            "output_excel": "/root/autodl-tmp/projects/myq/SingleCellProject/outputs_patient/trial260601_NM_center_border_aug5_2class/train/patient_ratio_from_cell_results.xlsx",
         },
 
         {
-            "cell_result_csv": "/root/autodl-tmp/projects/myq/SingleCellProject/outputs_test/260323_gt2yolo_576_0.65_2class_onlineAug/test_BJH/val_results.csv",
+            "cell_result_csv": "/root/autodl-tmp/projects/myq/SingleCellProject/outputs_test/trial260601_NM_center_border_aug5_2class/test_BJH/val_results.csv",
             "patient_info_xlsx": patient_info_xlsx,
-            "output_png": "/root/autodl-tmp/projects/myq/SingleCellProject/outputs_patient/260323_gt2yolo_576_0.65_2class_onlineAug/test_BJH/patient_ratio_from_cell_results.png",
-            "output_excel": "/root/autodl-tmp/projects/myq/SingleCellProject/outputs_patient/260323_gt2yolo_576_0.65_2class_onlineAug/test_BJH/patient_ratio_from_cell_results.xlsx",
+            "output_png": "/root/autodl-tmp/projects/myq/SingleCellProject/outputs_patient/trial260601_NM_center_border_aug5_2class/test_BJH/patient_ratio_from_cell_results.png",
+            "output_excel": "/root/autodl-tmp/projects/myq/SingleCellProject/outputs_patient/trial260601_NM_center_border_aug5_2class/test_BJH/patient_ratio_from_cell_results.xlsx",
         },
 
         {
-            "cell_result_csv": "/root/autodl-tmp/projects/myq/SingleCellProject/outputs_test/260323_gt2yolo_576_0.65_2class_onlineAug/test_FXH_noALL/val_results.csv",
+            "cell_result_csv": "/root/autodl-tmp/projects/myq/SingleCellProject/outputs_test/trial260601_NM_center_border_aug5_2class/test_FXH_noALL/val_results.csv",
             "patient_info_xlsx": patient_info_xlsx,
-            "output_png": "/root/autodl-tmp/projects/myq/SingleCellProject/outputs_patient/260323_gt2yolo_576_0.65_2class_onlineAug/test_FXH_noALL/patient_ratio_from_cell_results.png",
-            "output_excel": "/root/autodl-tmp/projects/myq/SingleCellProject/outputs_patient/260323_gt2yolo_576_0.65_2class_onlineAug/test_FXH_noALL/patient_ratio_from_cell_results.xlsx",
+            "output_png": "/root/autodl-tmp/projects/myq/SingleCellProject/outputs_patient/trial260601_NM_center_border_aug5_2class/test_FXH_noALL/patient_ratio_from_cell_results.png",
+            "output_excel": "/root/autodl-tmp/projects/myq/SingleCellProject/outputs_patient/trial260601_NM_center_border_aug5_2class/test_FXH_noALL/patient_ratio_from_cell_results.xlsx",
         },
 
         {
-            "cell_result_csv": "/root/autodl-tmp/projects/myq/SingleCellProject/outputs_test/260323_gt2yolo_576_0.65_2class_onlineAug/test_TJMU/val_results.csv",
+            "cell_result_csv": "/root/autodl-tmp/projects/myq/SingleCellProject/outputs_test/trial260601_NM_center_border_aug5_2class/test_TJMU/val_results.csv",
             "patient_info_xlsx": patient_info_xlsx,
-            "output_png": "/root/autodl-tmp/projects/myq/SingleCellProject/outputs_patient/260323_gt2yolo_576_0.65_2class_onlineAug/test_TJMU/patient_ratio_from_cell_results.png",
-            "output_excel": "/root/autodl-tmp/projects/myq/SingleCellProject/outputs_patient/260323_gt2yolo_576_0.65_2class_onlineAug/test_TJMU/patient_ratio_from_cell_results.xlsx",
+            "output_png": "/root/autodl-tmp/projects/myq/SingleCellProject/outputs_patient/trial260601_NM_center_border_aug5_2class/test_TJMU/patient_ratio_from_cell_results.png",
+            "output_excel": "/root/autodl-tmp/projects/myq/SingleCellProject/outputs_patient/trial260601_NM_center_border_aug5_2class/test_TJMU/patient_ratio_from_cell_results.xlsx",
         },
     ]
 
