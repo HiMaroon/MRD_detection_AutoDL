@@ -1,0 +1,15 @@
+arch: efficientnet_b0
+drop: 0.3
+drop_path: 0.1
+freeze_backbone_epochs: 3
+lambda_morph: 1
+local_weight_path: /root/autodl-tmp/projects/myq/SingleCellProject/exp_5fold_NM_morph4_center_border_aug10/fold1/cls_stage1_gt2yolo/epoch=15-val_f1_macro=0.0000.ckpt
+mixstyle_alpha: 0.1
+mixstyle_prob: 0.4
+morph_dim: 4
+morph_fusion_hidden: 64
+morph_hidden: 128
+morph_loss: smoothl1
+morph_mode: loss
+pretrained: false
+use_morph_head: true

@@ -1,6 +1,6 @@
 arch: efficientnet_b0
 pretrained: false
-local_weight_path: /root/autodl-tmp/projects/myq/SingleCellProject/weights/pytorch_model.bin
+local_weight_path: /root/autodl-tmp/projects/mwh/SingleCellProject/weights/pytorch_model.bin
 drop: 0.3
 drop_path: 0.1
 freeze_backbone_epochs: 3
@@ -11,5 +11,5 @@ use_morph_head: true
 morph_dim: 4
 morph_hidden: 128
 morph_fusion_hidden: 64
-lambda_morph: 1 #0.05
+lambda_morph: 1
 morph_loss: smoothl1

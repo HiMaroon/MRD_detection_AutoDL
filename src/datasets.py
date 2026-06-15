@@ -82,6 +82,7 @@ class LabelFileDataset(Dataset):
 
     def _load_label_file(self, label_file: str) -> List[SampleRecord]:
         records: List[SampleRecord] = []
+        label_task = str(self.advanced_cfg.get("label_task", "")).strip().lower()
         with open(label_file, "r", encoding="utf-8") as f:
             for line in f:
                 s = line.strip()
@@ -95,11 +96,16 @@ class LabelFileDataset(Dataset):
                 small_label = int(parts[2])
                 # if small_label == 0:
                 #     continue
-                y=big_label
-                if big_label == 3:
-                    y = 0
-                elif big_label == 2:
-                    y = 1
+                if label_task == "nm_three_class":
+                    # 3-class NM screening task: 0 = other/background/negative, 1 = N, 2 = M.
+                    # The label generator emits N=1, M=2, known negatives=3, unknown/background=0.
+                    y = big_label if big_label in (1, 2) else 0
+                else:
+                    y=big_label
+                    if big_label == 3:
+                        y = 0
+                    elif big_label == 2:
+                        y = 1
                 # y = 0 if small_label == 15 else small_label
                 # y = small_label
                 records.append(SampleRecord(img_path=img, label=y))

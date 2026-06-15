@@ -28,7 +28,7 @@ POSITIVE_CLASS = 1
 # 规则：只有 value == 1 的算正类；value == 0/2 或不在字典中都算 0
 cell_dict_big = {
     "V": 0, "0": 0,
-    "N": 1, "N1": 1, "M": 1, "M1": 1, "R": 1, "R1": 1, "J": 1, "J1": 1,
+    "N": 1, "N1": 2, "M": 1, "M1": 2, "R": 2, "R1": 2, "J": 2, "J1": 2,
     "N0": 2, "N2": 2, "N3": 2, "N4": 2, "N5": 2,
     "E": 2, "B": 2, "E1": 2, "B1": 2,
     "M0": 2, "M2": 2, "R2": 2, "R3": 2,
@@ -813,7 +813,7 @@ def parse_args():
     p = argparse.ArgumentParser(description="融合 5-fold 结果，追加患者级分析，并可与非5-fold结果对比")
     p.add_argument(
         "--root",
-        default="/root/autodl-tmp/projects/myq/SingleCellProject/runs_5fold_exp_morph4_center_border_aug10",
+        default="/root/autodl-tmp/projects/myq/SingleCellProject/exp_5fold_NM_morph4_center_border_aug10",
         help="包含 fold*/eval 的 5-fold 根目录",
     )
     p.add_argument(
@@ -823,7 +823,8 @@ def parse_args():
     )
     p.add_argument(
         "--single-root",
-        default="/root/autodl-tmp/projects/myq/SingleCellProject/outputs_test/260323_gt2yolo_576_0.65_2class_onlineAug",
+        # default="/root/autodl-tmp/projects/myq/SingleCellProject/outputs_test/260323_gt2yolo_576_0.65_2class_onlineAug",
+        default="/root/autodl-tmp/projects/myq/SingleCellProject/outputs_test/trial260601_NM_morph4_center_border_aug5_2class",
         help="非5-fold结果目录。支持 <single_root>/<split>/val_results.csv，或直接 <single_root>/val_results.csv",
     )
     p.add_argument(

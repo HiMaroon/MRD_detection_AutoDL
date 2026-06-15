@@ -1,0 +1,46 @@
+advanced:
+  border_aug_mode: low_contrast
+  border_aug_prob: 0.6
+  border_aug_width_ratio: 0.12
+  center_weight_mode: gaussian
+  center_weight_sigma: 0.45
+  center_weight_strength: 0.45
+  input_mode: image_only
+augment:
+  brightness: 0.1
+  contrast: 0.1
+  hflip_p: 0.5
+  rotate_angles:
+  - 0
+  - 90
+  - 180
+  - 270
+  saturation: 0.1
+  sharpness_factor: 2.0
+  sharpness_p: 0.5
+  vflip_p: 0.5
+img_size: 224
+mean:
+- 0.485
+- 0.456
+- 0.406
+morph_cols:
+- area
+- perimeter
+- circularity
+- norm_entropy
+morph_dim: 4
+num_classes: 2
+num_workers: 32
+pin_memory: true
+repeat_factor: 10
+return_morph: true
+std:
+- 0.229
+- 0.224
+- 0.225
+train_labels: /root/autodl-tmp/projects/myq/SingleCellProject/exp_5fold_NM_morph4_center_border_aug10/fold4/singlecell/train_groundtruth_labels.txt
+train_morph_csv: /root/autodl-tmp/projects/myq/SingleCellProject/exp_5fold_NM_morph4_center_border_aug10/fold4/morph_csv/train_groundtruth_morph.csv
+use_weighted_sampler: false
+val_labels: /root/autodl-tmp/projects/myq/SingleCellProject/exp_5fold_NM_morph4_center_border_aug10/fold4/singlecell/val_labels.txt
+val_morph_csv: /root/autodl-tmp/projects/myq/SingleCellProject/exp_5fold_NM_morph4_center_border_aug10/fold4/morph_csv/val_morph.csv

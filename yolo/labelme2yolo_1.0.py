@@ -16,7 +16,7 @@ val_dirs = [
 ]
 
 # 输出路径
-output_base_dir = "/root/autodl-tmp/projects/myq/SingleCellProject/yolo/yolo_dataset_260323"
+output_base_dir = "/root/autodl-tmp/projects/ydj/SingleCellProject/yolo/yolo_dataset_260323"
 
 output_train_image_dir = os.path.join(output_base_dir, "images", "train")
 output_val_image_dir = os.path.join(output_base_dir, "images", "val")

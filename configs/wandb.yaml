@@ -1,8 +1,11 @@
 project: singlecell
 entity: ''
 mode: online
-name: trial260601_NM_morph4_center_border_aug5_2class
+name: trial260603_codex_NM_threeclass_morph4_center_border_aug5_wandb
 tags:
 - MAIN
 - yolo11m
 - NM
+- singlefold
+- threeclass
+- NM-screening

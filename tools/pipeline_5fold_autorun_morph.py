@@ -24,7 +24,7 @@ import torch
 import yaml
 
 # 复用已有工具函数
-from dataset.DataTextGenerator_test import DataTxtGenerator
+from dataset.DataTextGenerator_test_new_16 import DataTxtGenerator
 from dataset.groundtruth2singlecell import process_cells_from_ground_truth
 from tools.test import run_test_on_split
 from tools.patient_analysis import run_one_task, set_chinese_font
@@ -722,8 +722,8 @@ def parse_args():
     # 新增：可直接使用已有的 patient_base_fold_assignment.csv
     p.add_argument(
         "--assignment-csv",
-        default=None,
-        # default="/root/autodl-tmp/projects/myq/SingleCellProject/runs_5fold_260403/patient_base_fold_assignment.csv",
+        # default=None,
+        default="/root/autodl-tmp/projects/myq/SingleCellProject/exp_5fold_NM_morph4_center_border_aug10_fault/patient_base_fold_assignment.csv",
         help="可选。已有的 patient_base_fold_assignment.csv 路径；提供后将直接按该文件中的 fold 分配执行。",
     )
 
@@ -745,8 +745,8 @@ def parse_args():
     p.add_argument("--yolo-device", default="0", help="YOLO 推理设备，如 0/cpu")
     p.add_argument("--yolo-predict-no-half", action="store_true", help="禁用半精度推理（默认启用）")
     p.add_argument("--reuse-fold-root", 
-                #    default="/root/autodl-tmp/projects/myq/SingleCellProject/runs_5fold_exp_5fold_center_border_aug10", 
-                   default=None,
+                   default="/root/autodl-tmp/projects/myq/SingleCellProject/exp_5fold_NM_morph4_center_border_aug10_fault", 
+                #    default=None,
                    help="可选。复用某次5-fold结果根目录（含 fold*/yolo_preds 与 singlecell），跳过 YOLO 与单细胞生成")
 
     p.add_argument("--test-bjh-root", default="/root/autodl-tmp/data/BJH_imgs_260211")

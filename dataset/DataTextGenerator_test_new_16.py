@@ -23,7 +23,7 @@ def map_big_label(raw_label: str) -> int:
     negative_group = {
         #"V", "0",
         "N0", "N1", "N2", "N3", "N4", "N5",
-        "M1", "R", "R1", "J", "J1"
+        "M1", "R", "R1", "J", "J1",
         "E", "B", "E1", "B1",
         "M0", "M2",
         "R2", "R3",
@@ -177,7 +177,7 @@ def DataTxtGenerator(output_dir):
         imgs = list(img_dir.rglob("*.png"))
         imgs = [p for p in imgs if ".ipynb_checkpoints" not in str(p)]
 
-        txt_path = output_dir / f"{split_name}_labels_NM_16.txt"
+        txt_path = output_dir / f"{split_name}_labels.txt"
 
         with open(txt_path, "w", encoding="utf-8") as f:
             for img_path in tqdm(imgs, desc=f"生成标签: {split_name}", unit="line"):
@@ -197,4 +197,5 @@ def DataTxtGenerator(output_dir):
 
 if __name__ == "__main__":
     output_dir = "/root/autodl-tmp/projects/myq/SingleCellProject/dataset/singlecell_260323"
+    # output_dir = "/root/autodl-tmp/projects/myq/SingleCellProject/exp_5fold_NM_morph4_center_border_aug10_fault/fold5/singlecell"
     DataTxtGenerator(output_dir)

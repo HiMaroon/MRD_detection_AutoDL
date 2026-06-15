@@ -1,6 +1,6 @@
 train_labels: /root/autodl-tmp/projects/myq/SingleCellProject/dataset/singlecell_260323/train_labels_NM_16.txt
 val_labels: /root/autodl-tmp/projects/myq/SingleCellProject/dataset/singlecell_260323/val_labels_NM_16.txt
-num_classes: 2
+num_classes: 3
 img_size: 224
 num_workers: 32
 pin_memory: true
@@ -25,9 +25,9 @@ augment:
   saturation: 0.1
   sharpness_factor: 2.0
   sharpness_p: 0.5
-repeat_factor: 10
+repeat_factor: 5
 use_weighted_sampler: false
-return_morph: True
+return_morph: true
 morph_cols:
 - area
 - perimeter
@@ -44,3 +44,4 @@ advanced:
   border_aug_prob: 0.6
   border_aug_width_ratio: 0.12
   border_aug_mode: low_contrast
+  label_task: nm_three_class

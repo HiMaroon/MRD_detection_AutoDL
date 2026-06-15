@@ -1,0 +1,37 @@
+accumulate_grad_batches: 1
+attention_regularization:
+  border_ratio: 0.15
+  lambda_border: 0.05
+  lambda_center: 0.02
+  use_border_attention_reg: true
+batch_size: 512
+callbacks:
+  checkpoint:
+    filename: '{epoch:02d}-{val_f1_macro:.4f}'
+    mode: max
+    monitor: val/f1_macro
+    save_last: true
+    save_top_k: 3
+  early_stopping:
+    min_delta: 1.0e-05
+    mode: max
+    monitor: val/f1_macro
+    patience: 6
+devices: 1
+imbalance:
+  label_smoothing: 0.05
+  logit_adjust_tau: 1
+  loss: logit_adjusted_ce
+  use_class_weight_loss: true
+max_epochs: 50
+optimizer:
+  lr: 5.0e-05
+  name: adamw
+  weight_decay: 0.001
+output_root: /root/autodl-tmp/projects/myq/SingleCellProject/exp_5fold_NM_morph4_center_border_aug10/fold2/cls_stage2_yolo2yolo
+precision: 16-mixed
+scheduler:
+  name: cosine
+  warmup_epochs: 3
+seed: 42
+use_wandb: true

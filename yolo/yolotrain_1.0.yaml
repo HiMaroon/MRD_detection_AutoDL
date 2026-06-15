@@ -10,7 +10,7 @@ mode: train # (str) YOLO mode, i.e. train, val, predict, export, track, benchmar
 project: /root/autodl-tmp/projects/myq/SingleCellProject/yolo/cellseg # (str, optional) project name for results root
 name: 260313_MAIN_yolo11s # (str, optional) experiment name; results in 'project/name'
 # model: /root/autodl-tmp/projects/myq/SingleCellProject/weights/yolo11s-seg.pt
-data: /root/autodl-tmp/projects/myq/SingleCellProject/yolo/yolo_dataset_260323/dataset.yaml
+data: /root/autodl-tmp/projects/ydj/SingleCellProject/yolo/yolo_dataset_260323/dataset.yaml
 epochs: 100 # (int) number of epochs to train for
 time: # (float, optional) max hours to train; overrides epochs if set
 patience: 30 # (int) early stop after N epochs without val improvement

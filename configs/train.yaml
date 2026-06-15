@@ -1,4 +1,4 @@
-output_root: /root/autodl-tmp/projects/myq/SingleCellProject/outputs/trial260601_NM_morph4_center_border_aug5_2class
+output_root: /root/autodl-tmp/projects/myq/SingleCellProject/outputs/trial260603_codex_NM_threeclass_morph4_center_border_aug5_wandb
 batch_size: 512
 max_epochs: 50
 precision: 16-mixed
@@ -23,11 +23,11 @@ callbacks:
     monitor: val/f1_macro
     mode: max
     save_top_k: 3
-    filename: '{epoch:02d}-{val_f1_macro:.4f}'
+    filename: epoch={epoch:02d}
     save_last: true
 imbalance:
   use_class_weight_loss: true
-  loss: logit_adjusted_ce
+  loss: weighted_ce
   logit_adjust_tau: 1
   label_smoothing: 0.05
 attention_regularization:

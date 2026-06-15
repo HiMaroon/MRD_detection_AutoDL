@@ -1,0 +1,8 @@
+entity: ''
+mode: online
+name: exp_5fold_NM_morph4_center_border_aug10
+project: singlecell
+tags:
+- MAIN
+- yolo11m
+- NM
