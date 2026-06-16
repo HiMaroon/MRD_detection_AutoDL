@@ -542,17 +542,17 @@ def main():
     datasets = [
         {
             "name": "train",
-            "seg": r"/root/autodl-tmp/projects/myq/SingleCellProject/yolo/yolo_preds_260323/train",
-            "label": r"/root/autodl-tmp/data/MAIN_imgs_split_260323/Train",
-            "img": r"/root/autodl-tmp/data/MAIN_imgs_split_260323/Train",
-            "out": r"/root/autodl-tmp/projects/myq/SingleCellProject/dataset/singlecell_dynamic_size1.2_260323/train",
+            "seg": r"/root/autodl-tmp/projects/myq/SingleCellProject/yolo/yolo_preds_260615/train",
+            "label": r"/root/autodl-tmp/data/MAIN_imgs_split_260615/Train",
+            "img": r"/root/autodl-tmp/data/MAIN_imgs_split_260615/Train",
+            "out": r"/root/autodl-tmp/projects/myq/SingleCellProject/dataset/singlecell_dynamic_size1.2_260615/train",
         },
         {
             "name": "val",
-            "seg": r"/root/autodl-tmp/projects/myq/SingleCellProject/yolo/yolo_preds_260323/val",
-            "label": r"/root/autodl-tmp/data/MAIN_imgs_split_260323/Val",
-            "img": r"/root/autodl-tmp/data/MAIN_imgs_split_260323/Val",
-            "out": r"/root/autodl-tmp/projects/myq/SingleCellProject/dataset/singlecell_dynamic_size1.2_260323/val",
+            "seg": r"/root/autodl-tmp/projects/myq/SingleCellProject/yolo/yolo_preds_260615/val",
+            "label": r"/root/autodl-tmp/data/MAIN_imgs_split_260615/Val",
+            "img": r"/root/autodl-tmp/data/MAIN_imgs_split_260615/Val",
+            "out": r"/root/autodl-tmp/projects/myq/SingleCellProject/dataset/singlecell_dynamic_size1.2_260615/val",
         },
         # {
         #     "name": "test_TJMU",
@@ -567,7 +567,7 @@ def main():
         print(f"开始处理数据集：{ds['name']}")
         out_dir = Path(ds["out"])
 
-        morph_csv_dir = Path("/root/autodl-tmp/projects/myq/SingleCellProject/dataset/singlecell_dynamic_size1.2_260323/morph_csv")
+        morph_csv_dir = Path("/root/autodl-tmp/projects/myq/SingleCellProject/dataset/singlecell_dynamic_size1.2_260615/morph_csv")
         morph_csv_dir.mkdir(parents=True, exist_ok=True)
         morph_csv_path = morph_csv_dir / f"morphology_{ds['name']}.csv"
 

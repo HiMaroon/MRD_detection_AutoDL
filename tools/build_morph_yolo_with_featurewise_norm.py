@@ -649,8 +649,8 @@ if __name__ == "__main__":
 
 '''
 python tools/build_morph_yolo_with_featurewise_norm.py \
-  --splits_json tools/morph_splits.json \
-  --out_root dataset/morph_csv_norm \
+  --splits_json tools/morph_splits_trainval.json \
+  --out_root dataset/morph_csv_norm_260615 \
   --features contour+weak \
   --crop_size 576 \
   --min_circularity 0.65 \

@@ -196,6 +196,6 @@ def DataTxtGenerator(output_dir):
 
 
 if __name__ == "__main__":
-    output_dir = "/root/autodl-tmp/projects/myq/SingleCellProject/dataset/singlecell_260323"
+    output_dir = "/root/autodl-tmp/projects/myq/SingleCellProject/dataset/singlecell_260615"
     # output_dir = "/root/autodl-tmp/projects/myq/SingleCellProject/exp_5fold_NM_morph4_center_border_aug10_fault/fold5/singlecell"
     DataTxtGenerator(output_dir)
